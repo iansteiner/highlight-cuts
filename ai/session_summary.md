@@ -41,12 +41,17 @@ The user requested a tool to:
 -   **Coverage**: Achieved **95% code coverage**.
 -   **Mocking**: Used `unittest.mock` to simulate FFmpeg calls and file system operations, ensuring tests run fast and don't require actual media files.
 -   **Manual Verification**: Performed a dry run with dummy files to verify the end-to-end flow.
+-   **Integration Testing**: Created `tests/test_integration.py` which:
+    -   Generates a test video using FFmpeg (with frequent keyframes).
+    -   Runs the CLI against it.
+    -   Validates output file existence and duration.
 
 ### 5. Documentation
 -   **`docs/usage.md`**: Detailed guide on how to install and run the tool.
 -   **`docs/background.md`**: Explanation of the problem, solution, and technical design choices (stream copying, interval merging).
 -   **`README.md`**: Project landing page with quick start instructions.
 -   **`docs/CHANGELOG.md`**: Added a changelog to track version history.
+-   **`docs/example_clips.csv`**: Added a sample CSV file with 3 players and 4 clips each. Updated to include "Game2" with 3 clips per player.
 
 ### 6. Workflow Standardization
 -   **Renamed Context**: Moved `ai_context/` to `ai/` for brevity.

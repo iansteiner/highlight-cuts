@@ -1,0 +1,22 @@
+videoName,startTime,stopTime,playerName
+Game1,00:01:00,00:01:15,Michael Jordan
+Game1,00:05:30,00:05:45,Michael Jordan
+Game1,00:10:00,00:10:20,Michael Jordan
+Game1,00:15:00,00:15:10,Michael Jordan
+Game1,00:02:00,00:02:10,LeBron James
+Game1,00:06:00,00:06:20,LeBron James
+Game1,00:12:30,00:12:45,LeBron James
+Game1,00:18:00,00:18:15,LeBron James
+Game1,00:03:00,00:03:15,Kobe Bryant
+Game1,00:08:00,00:08:10,Kobe Bryant
+Game1,00:14:00,00:14:20,Kobe Bryant
+Game1,00:20:00,00:20:15,Kobe Bryant
+Game2,00:01:00,00:01:10,Michael Jordan
+Game2,00:04:00,00:04:15,Michael Jordan
+Game2,00:09:00,00:09:20,Michael Jordan
+Game2,00:02:00,00:02:15,LeBron James
+Game2,00:05:00,00:05:10,LeBron James
+Game2,00:11:00,00:11:25,LeBron James
+Game2,00:03:00,00:03:10,Kobe Bryant
+Game2,00:07:00,00:07:20,Kobe Bryant
+Game2,00:13:00,00:13:15,Kobe Bryant

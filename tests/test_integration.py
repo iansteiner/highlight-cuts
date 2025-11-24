@@ -2,12 +2,12 @@ import pytest
 import subprocess
 import os
 import json
-from pathlib import Path
 from click.testing import CliRunner
 from highlight_cuts.cli import main
 
 TEST_VIDEO = "integration_test_video.mp4"
 TEST_CSV = "integration_test.csv"
+
 
 def generate_test_video(path: str, duration: int = 30):
     """Generates a test video using ffmpeg if it doesn't exist."""
@@ -15,37 +15,48 @@ def generate_test_video(path: str, duration: int = 30):
         return
 
     cmd = [
-        'ffmpeg', '-y',
-        '-f', 'lavfi',
-        '-i', f'testsrc=duration={duration}:size=640x360:rate=30',
-        '-c:v', 'libx264',
-        '-g', '30',  # Force keyframe every 30 frames (1 second) for precise cutting
-        path
+        "ffmpeg",
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        f"testsrc=duration={duration}:size=640x360:rate=30",
+        "-c:v",
+        "libx264",
+        "-g",
+        "30",  # Force keyframe every 30 frames (1 second) for precise cutting
+        path,
     ]
     subprocess.run(cmd, check=True, capture_output=True)
+
 
 def get_video_duration(path: str) -> float:
     """Returns the duration of a video file in seconds using ffprobe."""
     cmd = [
-        'ffprobe',
-        '-v', 'error',
-        '-show_entries', 'format=duration',
-        '-of', 'json',
-        path
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        path,
     ]
     result = subprocess.run(cmd, check=True, capture_output=True)
     data = json.loads(result.stdout)
-    return float(data['format']['duration'])
+    return float(data["format"]["duration"])
+
 
 @pytest.fixture(scope="module")
 def setup_media():
     """Fixture to create test media once per session."""
     generate_test_video(TEST_VIDEO)
     yield
-    # Cleanup is optional, keeping it helps debugging. 
+    # Cleanup is optional, keeping it helps debugging.
     # But let's clean up the CSV and outputs, keep the big video.
     if os.path.exists(TEST_CSV):
         os.remove(TEST_CSV)
+
 
 def test_end_to_end_workflow(setup_media):
     """
@@ -59,16 +70,15 @@ def test_end_to_end_workflow(setup_media):
 TestGame,00:00:05,00:00:10,TestPlayer
 TestGame,00:00:20,00:00:25,TestPlayer
 """
-    with open(TEST_CSV, 'w') as f:
+    with open(TEST_CSV, "w") as f:
         f.write(csv_content)
 
     # 2. Run the CLI
     runner = CliRunner()
-    result = runner.invoke(main, [
-        '--input-video', TEST_VIDEO,
-        '--csv-file', TEST_CSV,
-        '--game', 'TestGame'
-    ])
+    result = runner.invoke(
+        main,
+        ["--input-video", TEST_VIDEO, "--csv-file", TEST_CSV, "--game", "TestGame"],
+    )
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
 
@@ -76,7 +86,7 @@ TestGame,00:00:20,00:00:25,TestPlayer
     # Expected filename: integration_test_video_TestPlayer.mp4
     # (stem + _ + safe_player + suffix)
     expected_output = "integration_test_video_TestPlayer.mp4"
-    
+
     assert os.path.exists(expected_output), "Output video was not created"
 
     try:

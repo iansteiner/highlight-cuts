@@ -115,3 +115,112 @@ def test_cli_extraction_error(mock_extract, mock_merge, mock_process, runner):
         )
 
         assert result.exit_code != 0
+
+
+@patch("highlight_cuts.cli.process_csv")
+@patch("highlight_cuts.cli.merge_intervals")
+@patch("highlight_cuts.cli.extract_clip")
+@patch("highlight_cuts.cli.concat_clips")
+def test_cli_output_dir(mock_concat, mock_extract, mock_merge, mock_process, runner):
+    """Test that --output-dir creates files in the specified directory."""
+    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_merge.return_value = [(0, 10)]
+
+    with runner.isolated_filesystem():
+        with open("vid.mp4", "w") as f:
+            f.write("video")
+        with open("data.csv", "w") as f:
+            f.write("csv")
+
+        result = runner.invoke(
+            main,
+            [
+                "--input-video",
+                "vid.mp4",
+                "--csv-file",
+                "data.csv",
+                "--game",
+                "G1",
+                "--output-dir",
+                "output",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # Verify concat_clips was called with the output directory path
+        call_args = mock_concat.call_args
+        assert call_args is not None
+        output_path = call_args[0][1]  # Second argument to concat_clips
+        assert output_path.startswith("output/") or output_path.startswith("output\\")
+
+
+@patch("highlight_cuts.cli.process_csv")
+@patch("highlight_cuts.cli.merge_intervals")
+@patch("highlight_cuts.cli.extract_clip")
+@patch("highlight_cuts.cli.concat_clips")
+def test_cli_output_dir_created(
+    mock_concat, mock_extract, mock_merge, mock_process, runner
+):
+    """Test that --output-dir creates the directory if it doesn't exist."""
+    import os
+
+    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_merge.return_value = [(0, 10)]
+
+    with runner.isolated_filesystem():
+        with open("vid.mp4", "w") as f:
+            f.write("video")
+        with open("data.csv", "w") as f:
+            f.write("csv")
+
+        # Verify directory doesn't exist before
+        assert not os.path.exists("new_output_dir")
+
+        result = runner.invoke(
+            main,
+            [
+                "--input-video",
+                "vid.mp4",
+                "--csv-file",
+                "data.csv",
+                "--game",
+                "G1",
+                "--output-dir",
+                "new_output_dir",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # Verify directory was created
+        assert os.path.exists("new_output_dir")
+        assert os.path.isdir("new_output_dir")
+
+
+@patch("highlight_cuts.cli.process_csv")
+@patch("highlight_cuts.cli.merge_intervals")
+@patch("highlight_cuts.cli.extract_clip")
+@patch("highlight_cuts.cli.concat_clips")
+def test_cli_default_output_dir(
+    mock_concat, mock_extract, mock_merge, mock_process, runner
+):
+    """Test that without --output-dir, files are created in current directory."""
+    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_merge.return_value = [(0, 10)]
+
+    with runner.isolated_filesystem():
+        with open("vid.mp4", "w") as f:
+            f.write("video")
+        with open("data.csv", "w") as f:
+            f.write("csv")
+
+        result = runner.invoke(
+            main, ["--input-video", "vid.mp4", "--csv-file", "data.csv", "--game", "G1"]
+        )
+
+        assert result.exit_code == 0
+        # Verify concat_clips was called with current directory path
+        call_args = mock_concat.call_args
+        assert call_args is not None
+        output_path = call_args[0][1]
+        # Should be in current directory (starts with ./ or just filename)
+        assert not output_path.startswith("/") or output_path.startswith("./")

@@ -33,11 +33,17 @@ logger = logging.getLogger(__name__)
     "--padding", default=0.0, help="Seconds to add to the start and end of each clip."
 )
 @click.option(
+    "--output-dir",
+    default=".",
+    type=click.Path(),
+    help="Directory where output videos will be saved. Defaults to current directory.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Show what would be generated without running FFmpeg.",
 )
-def main(input_video, csv_file, game, padding, dry_run):
+def main(input_video, csv_file, game, padding, output_dir, dry_run):
     """
     Slices a sports game video into player highlights based on a CSV of timestamps.
     """
@@ -56,6 +62,11 @@ def main(input_video, csv_file, game, padding, dry_run):
     input_path = Path(input_video)
     video_stem = input_path.stem
     video_suffix = input_path.suffix
+
+    # Create output directory if it doesn't exist
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Output directory: {output_path.absolute()}")
 
     for player, intervals in player_clips.items():
         merged = merge_intervals(intervals, padding)
@@ -99,11 +110,12 @@ def main(input_video, csv_file, game, padding, dry_run):
                 .replace(" ", "_")
             )
             output_filename = f"{video_stem}_{safe_player_name}{video_suffix}"
+            output_file_path = os.path.join(output_dir, output_filename)
 
-            logger.info(f"Concatenating clips into {output_filename}...")
+            logger.info(f"Concatenating clips into {output_file_path}...")
             try:
-                concat_clips(temp_clips, output_filename)
-                logger.info(f"Successfully created {output_filename}")
+                concat_clips(temp_clips, output_file_path)
+                logger.info(f"Successfully created {output_file_path}")
             except Exception as e:
                 logger.error(f"Failed to create final video for {player}: {e}")
 

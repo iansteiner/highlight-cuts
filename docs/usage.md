@@ -28,6 +28,7 @@ uv run highlight-cuts --input-video <VIDEO_PATH> --csv-file <CSV_PATH> --game <G
 ### Options
 
 - `--padding <FLOAT>`: Seconds to add to the start and end of each clip (default: 0.0).
+- `--output-dir <PATH>`: Directory where output videos will be saved (default: current directory).
 - `--dry-run`: Print the planned clips and total duration without running FFmpeg.
 - `--help`: Show the help message.
 
@@ -53,6 +54,8 @@ Game2,00:10:00,00:10:15,John Doe
 The tool generates a video file for each player found in the CSV for the specified game.
 The output filename format is: `{OriginalVideoName}_{PlayerName}.{Extension}`.
 
+Files are saved to the current directory by default, or to the directory specified with `--output-dir`.
+
 Example: `game_footage_John_Doe.mp4`
 
 ## Examples
@@ -65,4 +68,9 @@ uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1 -
 **Generate clips with 2 seconds of padding:**
 ```bash
 uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1 --padding 2.0
+```
+
+**Save clips to a specific directory:**
+```bash
+uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1 --output-dir highlights
 ```

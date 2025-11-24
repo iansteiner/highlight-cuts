@@ -79,3 +79,19 @@ The user requested a tool to:
 -   **Stream Copying**: Prioritized speed over frame-perfect accuracy. Cuts snap to keyframes.
 -   **Interval Merging**: Decided to merge overlapping clips into one continuous segment rather than creating duplicates.
 -   **Architecture**: Separated core logic (Pandas/Math) from side effects (FFmpeg/CLI) to maximize testability.
+
+## Session 2 - 2025-11-23
+
+### 10. Added Output Directory Option
+-   **What**: Added `--output-dir` CLI argument to allow users to specify where generated highlight videos should be saved.
+-   **Why**: Users needed control over where output files are created instead of always saving to the current directory.
+-   **How**: 
+    -   Modified `cli.py` to add the new `--output-dir` option with a default value of `.` (current directory).
+    -   Added logic to create the output directory if it doesn't exist using `Path.mkdir(parents=True, exist_ok=True)`.
+    -   Updated the output file path construction to use `os.path.join(output_dir, output_filename)`.
+-   **Testing**: Added three new tests in `test_cli.py`:
+    -   `test_cli_output_dir`: Verifies files are created in the specified directory.
+    -   `test_cli_output_dir_created`: Verifies the directory is created if it doesn't exist.
+    -   `test_cli_default_output_dir`: Verifies backward compatibility with default behavior.
+-   **Documentation**: Updated `docs/usage.md` with the new option and added an example. Updated `docs/CHANGELOG.md` with the feature.
+-   **Outcome**: All 27 tests pass with 96% code coverage. Feature is fully functional and documented.

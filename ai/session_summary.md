@@ -64,6 +64,12 @@ The user requested a tool to:
 ### 8. Future Planning
 -   Created `ai/future/gui_distribution_plan.md`: Documented the strategy for creating a GUI using **Streamlit** and distributing it as a standalone executable using **PyInstaller** and **GitHub Actions**.
 
+### 9. Workspace Configuration
+-   Created `.vscode/settings.json`: Configured VS Code / Antigravity to:
+    -   Use the `.venv` created by `uv` as the default interpreter.
+    -   Enable `ruff` as the default formatter and linter.
+    -   Format on save.
+
 ## Key Decisions
 -   **Stream Copying**: Prioritized speed over frame-perfect accuracy. Cuts snap to keyframes.
 -   **Interval Merging**: Decided to merge overlapping clips into one continuous segment rather than creating duplicates.

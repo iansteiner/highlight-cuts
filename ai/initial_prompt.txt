@@ -1,0 +1,25 @@
+I am looking to create an command line application that uses ffmpeg to slice up video from sports games and create highlights for different players.  My goal is to take a single video and create highlight videos for individual players.
+
+I want the inputs to be:
+- a movie that we want to cut up.
+- a csv file that contains timestamps (in/out) and player names.
+
+I want to create a video for each player that has the selected clips.
+
+I want this code infrastructure:
+- use ffmpg 
+- be written in python (3.13)
+- use uv for environment management
+- use pytest for testing
+- have good documentation on how to use the tool in a separete docs directory.
+- command line interface should use click
+- logging should use the standard python logging library and not print
+- processing of csv and debug prints should leverage pandas
+
+Special command line options:
+- a knob to add extra time to the in/out of the timestamps
+- dry run that just shows what will be generated for each player including the number of clips and total time (use pandas)
+
+As part of this project, I would like to keep track of how I interact with the AI.  please create a directory to manage this information.  This should help the AI with context and the user with background on the AI usage.  As part of this, please save this prompt as a txt file.
+
+before start to generate code, please ask any clarifying questions and help me understand the genereal plan.

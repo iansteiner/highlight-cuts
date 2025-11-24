@@ -46,19 +46,23 @@ The user requested a tool to:
 -   **`docs/usage.md`**: Detailed guide on how to install and run the tool.
 -   **`docs/background.md`**: Explanation of the problem, solution, and technical design choices (stream copying, interval merging).
 -   **`README.md`**: Project landing page with quick start instructions.
+-   **`docs/CHANGELOG.md`**: Added a changelog to track version history.
 
 ### 6. Workflow Standardization
 -   **Renamed Context**: Moved `ai_context/` to `ai/` for brevity.
 -   **Instructions**: Created `ai/instructions.md` to define the mandatory workflow for future changes:
     1.  Lint & Format (`ruff`).
     2.  Write/Pass Tests.
-    3.  Update Documentation.
+    3.  Update Documentation (including `CHANGELOG.md`).
     4.  Update Session Summary.
 
 ### 7. Code Quality
 -   Added `ruff` to dev dependencies.
 -   Ran `ruff format .` and `ruff check --fix .` to clean up all existing code.
 -   Updated instructions to mandate `ruff` usage.
+
+### 8. Future Planning
+-   Created `ai/future/gui_distribution_plan.md`: Documented the strategy for creating a GUI using **Streamlit** and distributing it as a standalone executable using **PyInstaller** and **GitHub Actions**.
 
 ## Key Decisions
 -   **Stream Copying**: Prioritized speed over frame-perfect accuracy. Cuts snap to keyframes.

@@ -10,10 +10,11 @@ When writing new code or modifying existing code, you **MUST** always perform th
     *   Run `uv run ruff check .` and `uv run ruff format .`.
 2.  **Test**: Write any new tests that are needed and ensure **ALL** tests pass.
     *   Run `uv run pytest` (and `uv run pytest --cov=src` if appropriate) to verify.
-2.  **Document**: Update the project documentation to reflect changes.
+3.  **Document**: Update the project documentation to reflect changes.
     *   Update `docs/` files if features change.
     *   Update `README.md` if high-level info changes.
-3.  **Summarize**: Update `ai/session_summary.md` with a log of your actions.
+    *   Update `docs/CHANGELOG.md` with a new entry for significant changes.
+4.  **Summarize**: Update `ai/session_summary.md` with a log of your actions.
     *   Append a new entry describing what was done, why, and the outcome.
 
 ## Directory Structure

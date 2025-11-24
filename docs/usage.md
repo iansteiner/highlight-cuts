@@ -22,7 +22,7 @@ uv run highlight-cuts --input-video <VIDEO_PATH> --csv-file <CSV_PATH> --game <G
 ### Arguments
 
 - `--input-video`: Path to the source video file (e.g., `game_footage.mp4`).
-- `--csv-file`: Path to the CSV file containing timestamps.
+- `--csv-file`: Path to a local CSV file **or** a Google Sheets URL (see [Google Sheets Guide](google_sheets.md)).
 - `--game`: The name of the game/video to filter for in the CSV.
 
 ### Options
@@ -74,3 +74,14 @@ uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1 -
 ```bash
 uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1 --output-dir highlights
 ```
+
+**Use a Google Sheets URL instead of a local CSV:**
+```bash
+uv run highlight-cuts \
+  --input-video game.mp4 \
+  --csv-file "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit?usp=sharing" \
+  --game Game1
+```
+
+See the [Google Sheets Guide](google_sheets.md) for setup instructions.
+

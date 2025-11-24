@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--csv-file",
     required=True,
-    type=click.Path(exists=True),
-    help="Path to the timestamps CSV file.",
+    type=str,
+    help="Path to CSV file or Google Sheets URL (must be publicly shared).",
 )
 @click.option(
     "--game", required=True, help="Name of the game/video in the CSV to process."

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+-   **Google Sheets URL support**: `--csv-file` now accepts Google Sheets URLs in addition to local CSV files. The tool automatically converts sharing URLs to CSV export format.
 -   `--output-dir` option to specify where generated highlight videos should be saved (defaults to current directory).
 -   Automatic creation of output directory if it doesn't exist.
 

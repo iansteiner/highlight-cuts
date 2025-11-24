@@ -24,5 +24,5 @@ Players often have back-to-back highlights.
 ### 3. Data-Driven Workflow
 The tool is designed to fit into a data-driven workflow:
 1.  **Log**: Record timestamps in a spreadsheet (Excel, Google Sheets) during the game.
-2.  **Export**: Save as CSV.
+2.  **Export**: Save as CSV or share the Google Sheets URL directly.
 3.  **Process**: Run `highlight-cuts` to generate all videos in one batch.

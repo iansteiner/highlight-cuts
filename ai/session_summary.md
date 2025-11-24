@@ -95,3 +95,51 @@ The user requested a tool to:
     -   `test_cli_default_output_dir`: Verifies backward compatibility with default behavior.
 -   **Documentation**: Updated `docs/usage.md` with the new option and added an example. Updated `docs/CHANGELOG.md` with the feature.
 -   **Outcome**: All 27 tests pass with 96% code coverage. Feature is fully functional and documented.
+
+## Session 3 - 2025-11-24
+
+### 11. Google Sheets URL Support Implementation
+
+**Objective**: Allow users to provide Google Sheets URLs directly to `--csv-file` instead of requiring local CSV files.
+
+#### Planning & Research
+-   Explored xfade transition support (documented in `ai/future/xfade_transitions.md` for future implementation)
+-   Researched Google Sheets public access methods
+-   Created test infrastructure: `tests/fixtures/test_clips.csv`, `tests/config/integration_test_config.yaml`
+
+#### Initial Implementation
+-   Added `normalize_sheets_url()` function to convert any Google Sheets URL format to CSV export
+-   Modified `process_csv()` to handle both file paths and URLs
+-   Updated CLI `--csv-file` option from `click.Path` to `str` to accept URLs
+-   Created 8 unit tests for URL normalization
+
+#### Challenge & Solution
+-   **Problem**: Initial `/export?format=csv` endpoint failed with HTTP 400 errors due to redirect wildcards
+-   **Root Cause**: Google's redirect URL contained `*/` wildcard that urllib/pandas couldn't handle
+-   **Solution**: Switched to `/gviz/tq?tqx=out:csv` endpoint which:
+    - Works with "Anyone with the link" sharing (no "Publish to web" needed)
+    - No redirect issues
+    - More reliable for programmatic access
+-   Added `requests>=2.31.0` dependency for better redirect handling
+
+#### Final Implementation
+-   **Code Changes**:
+    - `src/highlight_cuts/core.py`: Added `normalize_sheets_url()` and updated `process_csv()` to use requests for Google Sheets URLs
+    - `src/highlight_cuts/cli.py`: Changed `--csv-file` to accept strings instead of paths
+    - `pyproject.toml`: Added requests dependency
+-   **Tests**: All 38 tests pass (96% coverage) including 3 integration tests with real Google Sheets
+-   **Documentation**:
+    - Created `docs/google_sheets.md` with comprehensive setup and usage guide
+    - Updated `docs/usage.md` with Google Sheets examples
+    - Updated `docs/CHANGELOG.md`
+
+#### Technical Details
+-   Uses Google Sheets gviz API endpoint: `/gviz/tq?tqx=out:csv`
+-   Supports multiple URL formats (sharing URLs, edit URLs, export URLs)
+-   Backward compatible with local CSV files
+-   No authentication required for publicly shared sheets
+
+#### Outcome
+-   Feature fully functional and tested
+-   Users can now use Google Sheets for collaborative timestamp editing
+-   Simple "Share with link" is sufficient - no complex publishing needed

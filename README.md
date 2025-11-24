@@ -6,10 +6,12 @@
 - 🚀 **Blazing Fast**: Uses FFmpeg stream copying to slice videos without re-encoding.
 - 🧠 **Smart Merging**: Automatically combines overlapping or adjacent clips into smooth sequences.
 - 🎯 **Player-Centric**: Generates a dedicated video file for every player found in your data.
+- 📊 **Google Sheets Support**: Use Google Sheets URLs directly - no need to download CSV files.
 - 🔧 **Flexible**: Supports padding adjustments and dry-run previews.
 
 ## Documentation
 - [Usage Guide](docs/usage.md): How to install and run the tool.
+- [Google Sheets Guide](docs/google_sheets.md): How to use Google Sheets instead of local CSV files.
 - [Background & Design](docs/background.md): Context on why this tool exists and how it works.
 
 ## Quick Start

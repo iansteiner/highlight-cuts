@@ -6,6 +6,47 @@ from .utils import parse_time
 logger = logging.getLogger(__name__)
 
 
+def normalize_sheets_url(url: str) -> str:
+    """
+    Converts any Google Sheets URL to CSV export format.
+
+    Handles:
+    - Regular share URLs: .../edit?usp=sharing
+    - Direct edit URLs: .../edit#gid=123
+    - Already-converted export URLs (returns as-is)
+    - Non-Sheets URLs (returns as-is)
+
+    Args:
+        url: Google Sheets URL or regular file path
+
+    Returns:
+        CSV export URL or original input
+    """
+    import re
+
+    # Not a Google Sheets URL, return as-is
+    if "docs.google.com/spreadsheets" not in url:
+        return url
+
+    # Extract sheet ID
+    match = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)", url)
+    if not match:
+        return url
+
+    sheet_id = match.group(1)
+
+    # Extract gid (sheet tab ID) if present
+    gid_match = re.search(r"[#&]gid=([0-9]+)", url)
+    gid = gid_match.group(1) if gid_match else "0"
+
+    # Build export URL using gviz endpoint
+    # This works with "Anyone with the link" sharing without needing "Publish to web"
+    export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid}"
+
+    logger.debug(f"Converted Sheets URL to CSV export: {export_url}")
+    return export_url
+
+
 def merge_intervals(
     intervals: List[Tuple[float, float]], padding: float = 0.0
 ) -> List[Tuple[float, float]]:
@@ -48,20 +89,36 @@ def merge_intervals(
     return merged
 
 
-def process_csv(csv_path: str, game_name: str) -> Dict[str, List[Tuple[float, float]]]:
+def process_csv(
+    csv_source: str, game_name: str
+) -> Dict[str, List[Tuple[float, float]]]:
     """
-    Reads the CSV, filters by game name, and groups clips by player.
+    Reads CSV from file path or URL, filters by game name, and groups clips by player.
 
     Args:
-        csv_path: Path to the CSV file.
+        csv_source: Path to CSV file, Google Sheets URL, or direct CSV URL.
         game_name: Name of the video/game to filter by.
 
     Returns:
         Dictionary mapping player name to a list of (start, end) intervals.
     """
-    logger.info(f"Reading CSV from {csv_path}")
+    # Normalize Google Sheets URLs to CSV export format
+    csv_source = normalize_sheets_url(csv_source)
+
+    logger.info(f"Reading CSV from {csv_source}")
     try:
-        df = pd.read_csv(csv_path)
+        # Use requests for Google Sheets URLs to handle redirects properly
+        # urllib has issues with Google's redirect pattern containing wildcards
+        if csv_source.startswith("https://docs.google.com/spreadsheets"):
+            import requests
+            import io
+
+            response = requests.get(csv_source)
+            response.raise_for_status()
+            df = pd.read_csv(io.StringIO(response.text))
+        else:
+            # Use pandas directly for local files and other URLs
+            df = pd.read_csv(csv_source)
     except Exception as e:
         logger.error(f"Failed to read CSV: {e}")
         raise

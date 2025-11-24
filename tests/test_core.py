@@ -96,3 +96,132 @@ def test_process_csv_bad_timestamps():
             process_csv(csv_path, "game")
     finally:
         os.remove(csv_path)
+
+
+class TestNormalizeSheetsUrl:
+    """Tests for Google Sheets URL normalization."""
+
+    def test_normalize_regular_share_url(self):
+        """Test conversion of regular sharing URL."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_url = "https://docs.google.com/spreadsheets/d/ABC123/edit?usp=sharing"
+        expected = (
+            "https://docs.google.com/spreadsheets/d/ABC123/gviz/tq?tqx=out:csv&gid=0"
+        )
+        assert normalize_sheets_url(input_url) == expected
+
+    def test_normalize_url_with_gid(self):
+        """Test conversion of URL with specific sheet ID."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_url = "https://docs.google.com/spreadsheets/d/ABC123/edit#gid=456"
+        expected = (
+            "https://docs.google.com/spreadsheets/d/ABC123/gviz/tq?tqx=out:csv&gid=456"
+        )
+        assert normalize_sheets_url(input_url) == expected
+
+    def test_normalize_url_with_gid_in_query(self):
+        """Test conversion of URL with gid in query string."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_url = (
+            "https://docs.google.com/spreadsheets/d/ABC123/edit?usp=sharing&gid=789"
+        )
+        expected = (
+            "https://docs.google.com/spreadsheets/d/ABC123/gviz/tq?tqx=out:csv&gid=789"
+        )
+        assert normalize_sheets_url(input_url) == expected
+
+    def test_normalize_already_export_url(self):
+        """Test that export URLs are converted to gviz format."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_url = (
+            "https://docs.google.com/spreadsheets/d/ABC123/export?format=csv&gid=0"
+        )
+        # Even export URLs get normalized to gviz format
+        expected = (
+            "https://docs.google.com/spreadsheets/d/ABC123/gviz/tq?tqx=out:csv&gid=0"
+        )
+        assert normalize_sheets_url(input_url) == expected
+
+    def test_normalize_local_file_path(self):
+        """Test that local file paths pass through unchanged."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_path = "./data/clips.csv"
+        assert normalize_sheets_url(input_path) == input_path
+
+    def test_normalize_absolute_file_path(self):
+        """Test that absolute file paths pass through unchanged."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_path = "/Users/test/data/clips.csv"
+        assert normalize_sheets_url(input_path) == input_path
+
+    def test_normalize_other_url(self):
+        """Test that non-Sheets URLs pass through unchanged."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_url = "https://example.com/data.csv"
+        assert normalize_sheets_url(input_url) == input_url
+
+    def test_normalize_complex_sheet_id(self):
+        """Test with complex sheet ID containing hyphens and underscores."""
+        from highlight_cuts.core import normalize_sheets_url
+
+        input_url = "https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/edit?usp=sharing"
+        expected = "https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/gviz/tq?tqx=out:csv&gid=0"
+        assert normalize_sheets_url(input_url) == expected
+
+
+@pytest.mark.integration
+class TestGoogleSheetsIntegration:
+    """Integration tests for Google Sheets URL support."""
+
+    def test_process_csv_local_file(self):
+        """Test that local CSV files still work."""
+        result = process_csv("tests/fixtures/test_clips.csv", "TestGame")
+
+        assert "Alice" in result
+        assert "Bob" in result
+        assert "Charlie" in result
+
+        assert len(result["Alice"]) == 3
+        assert len(result["Bob"]) == 3
+        assert len(result["Charlie"]) == 2
+
+    def test_process_csv_google_sheets_url(self):
+        """Test reading from Google Sheets URL."""
+        # This is a real integration test - requires network access
+        url = "https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/edit?usp=sharing"
+        result = process_csv(url, "TestGame")
+
+        assert "Alice" in result
+        assert "Bob" in result
+        assert "Charlie" in result
+
+        assert len(result["Alice"]) == 3
+        assert len(result["Bob"]) == 3
+        assert len(result["Charlie"]) == 2
+
+    def test_process_csv_google_sheets_matches_local(self):
+        """Test that Google Sheets data matches local CSV file."""
+        local_result = process_csv("tests/fixtures/test_clips.csv", "TestGame")
+
+        url = "https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/edit?usp=sharing"
+        sheets_result = process_csv(url, "TestGame")
+
+        # Should have same players
+        assert set(local_result.keys()) == set(sheets_result.keys())
+
+        # Should have same number of clips per player
+        for player in local_result:
+            assert len(local_result[player]) == len(sheets_result[player])
+
+            # Should have same clip times
+            for local_clip, sheets_clip in zip(
+                local_result[player], sheets_result[player]
+            ):
+                assert local_clip == sheets_clip

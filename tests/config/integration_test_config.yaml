@@ -1,0 +1,19 @@
+# Integration Test Configuration
+# This file contains URLs and configuration for integration tests
+
+google_sheets:
+  # Test Google Sheets URL (publicly shared)
+  # This should be a Google Sheet created from tests/fixtures/test_clips.csv
+  # To update: Share the sheet with "Anyone with the link can view" and paste URL here
+  test_sheet_url: "https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/edit?usp=sharing"
+  
+  # Expected data for validation
+  test_game_name: "TestGame"
+  expected_players:
+    - "Alice"
+    - "Bob"
+    - "Charlie"
+  expected_clip_counts:
+    Alice: 3
+    Bob: 3
+    Charlie: 2

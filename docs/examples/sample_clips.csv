@@ -1,0 +1,9 @@
+videoName,startTime,stopTime,playerName
+SampleGame,00:01:30,00:01:45,Alice Johnson
+SampleGame,00:03:20,00:03:35,Alice Johnson
+SampleGame,00:07:10,00:07:25,Alice Johnson
+SampleGame,00:02:15,00:02:30,Bob Smith
+SampleGame,00:05:45,00:06:00,Bob Smith
+SampleGame,00:09:30,00:09:45,Bob Smith
+SampleGame,00:04:00,00:04:15,Charlie Davis
+SampleGame,00:08:20,00:08:35,Charlie Davis

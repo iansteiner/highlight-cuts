@@ -143,3 +143,159 @@ The user requested a tool to:
 -   Feature fully functional and tested
 -   Users can now use Google Sheets for collaborative timestamp editing
 -   Simple "Share with link" is sufficient - no complex publishing needed
+
+## Session 4 - 2025-11-23
+
+### 12. Documentation Enhancement for Robustness
+
+**Objective**: Improve project documentation to make it more robust, user-friendly, and comprehensive for both users and contributors.
+
+#### New Documentation Files Created
+
+1. **`CONTRIBUTING.md`**
+   - Developer guidelines and workflow
+   - Development setup instructions
+   - Code style guidelines with ruff
+   - Testing guidelines and coverage expectations
+   - Pull request process and commit message format
+   - Project structure overview
+
+2. **`SECURITY.md`**
+   - Security policy and vulnerability reporting process
+   - Google Sheets sharing security considerations
+   - Video file processing safety guidelines
+   - CSV parsing security notes
+   - Command injection prevention
+   - Best practices for users
+   - Third-party dependency security
+
+3. **`docs/TROUBLESHOOTING.md`**
+   - Comprehensive troubleshooting guide covering:
+     - Installation issues (Python, FFmpeg, uv)
+     - FFmpeg errors (exit codes, codecs, keyframes, permissions)
+     - CSV/data issues (format, encoding, missing data)
+     - Google Sheets issues (403/404 errors, wrong tabs, rate limiting)
+     - Video processing issues (formats, corruption)
+     - Performance issues (slow processing, memory, disk space)
+     - Output issues (file location, filenames)
+   - Common workflows and debugging strategies
+
+4. **`docs/architecture.md`**
+   - System overview with mermaid diagrams
+   - Architecture principles (separation of concerns, testability, speed)
+   - Detailed module design for each file (cli.py, core.py, ffmpeg.py, utils.py)
+   - Data flow diagrams and sequence diagrams
+   - Design decisions with rationale (stream copy, interval merging, pandas, Click)
+   - Testing strategy (unit tests, integration tests, coverage)
+   - Performance characteristics
+   - Future architecture considerations
+
+5. **`docs/FAQ.md`**
+   - 50+ frequently asked questions organized by category:
+     - General questions (what, who, cost)
+     - Installation & setup
+     - Video processing (formats, timing, quality, speed)
+     - CSV & data (format, Excel, Google Sheets, logging)
+     - Output & results (location, filenames, preview)
+     - Advanced usage (padding, merging, transitions)
+     - Troubleshooting quick reference
+     - Comparison with alternatives
+     - Privacy & security
+     - Contributing & support
+     - Future plans
+
+6. **`docs/examples/` Directory**
+   - `sample_clips.csv`: Basic example with 3 players
+   - `multi_game_season.csv`: Season-long tracking example
+   - `README.md`: Guide for using examples and creating custom CSVs
+
+#### Enhanced Existing Documentation
+
+1. **`README.md`**
+   - Added badges (Python version, license, code style)
+   - Added comprehensive system requirements section
+   - Added disk space requirements
+   - Added detailed quick start with installation steps
+   - Reorganized documentation links by category
+   - Added example workflow section
+   - Added performance metrics
+   - Added use cases section
+   - Added support section with links
+
+2. **`docs/usage.md`**
+   - Expanded installation section with platform-specific instructions
+   - Added prerequisites with verification commands
+   - Added common workflows section:
+     - First-time setup
+     - Weekly game processing
+     - Testing new CSV data
+     - Collaborative workflow with Google Sheets
+     - Converting unsupported formats
+   - Added tips & best practices:
+     - Padding recommendations
+     - CSV organization patterns
+     - Performance tips
+     - Quality tips
+   - Added next steps section with links
+
+3. **`docs/background.md`**
+   - Added comprehensive limitations & considerations section:
+     - Keyframe snapping explanation and mitigation
+     - Codec compatibility details
+     - Interval merging behavior
+     - Performance factors
+     - Google Sheets limitations
+     - Current feature limitations
+   - Added "When to Use This Tool" section
+   - Added comparison table with manual editing
+   - Added technical background section:
+     - Why FFmpeg?
+     - Why Python?
+     - Why stream copy? (with detailed comparison)
+
+4. **`docs/CHANGELOG.md`**
+   - Added documentation improvements to unreleased section
+   - Listed all new documentation files
+   - Listed all enhanced documentation files
+
+#### Documentation Statistics
+
+- **New files created**: 8 (5 major docs + 3 example files)
+- **Files enhanced**: 4 (README.md, usage.md, background.md, CHANGELOG.md)
+- **Total documentation pages**: ~3,500 words added
+- **Coverage areas**: Installation, usage, troubleshooting, architecture, security, contributing, FAQ, examples
+
+#### Key Improvements
+
+1. **User Experience**
+   - Clear installation instructions for all platforms
+   - Comprehensive troubleshooting guide
+   - FAQ answers common questions before users need to ask
+   - Example files provide ready-to-use templates
+
+2. **Developer Experience**
+   - Contributing guide standardizes workflow
+   - Architecture documentation explains design decisions
+   - Security policy provides clear vulnerability reporting process
+   - Code style and testing guidelines ensure quality
+
+3. **Transparency**
+   - Limitations clearly documented
+   - Trade-offs explained (speed vs. accuracy)
+   - Comparison with alternatives helps users make informed decisions
+   - Future plans documented in ai/future/
+
+4. **Accessibility**
+   - Multiple entry points (README, usage, FAQ)
+   - Cross-references between documents
+   - Platform-specific instructions
+   - Both beginner and advanced content
+
+#### Outcome
+
+- Project documentation is now comprehensive and professional-grade
+- Users have clear guidance for installation, usage, and troubleshooting
+- Contributors have clear guidelines for development and contributions
+- Security considerations are properly documented
+- All high-priority robustness recommendations implemented
+- Ready to move on to feature development

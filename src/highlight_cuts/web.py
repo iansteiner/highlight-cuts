@@ -108,7 +108,12 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
             <option value="" disabled selected>Select Game</option>
             {game_options}
         </select>
-        <select id="player-select" name="player" hx-swap-oob="true">
+        <select id="player-select" name="player" 
+                hx-swap-oob="true"
+                hx-post="/get-clips"
+                hx-target="#clips-table"
+                hx-include="[name='sheet_url'], [name='game']"
+                hx-trigger="change">
             <option value="" disabled selected>Select Player</option>
             {player_options}
         </select>
@@ -227,3 +232,55 @@ async def download_file(filename: str):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path, filename=filename)
+
+
+@app.post("/get-clips", response_class=HTMLResponse)
+async def get_clips(
+    sheet_url: str = Form(...),
+    game: str = Form(...),
+    player: str = Form(...)
+):
+    """
+    Returns an HTML table of clips for the selected player.
+    """
+    try:
+        player_clips = process_csv(sheet_url, game)
+        
+        if player not in player_clips:
+            return f"<div class='text-red-600'>No clips found for player {player} in game {game}</div>"
+
+        intervals = player_clips[player]
+        
+        # Create table rows
+        rows = ""
+        for i, (start, end) in enumerate(intervals):
+            duration = end - start
+            rows += f"""
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{i+1}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{start:.2f}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{end:.2f}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{duration:.2f}s</td>
+            </tr>
+            """
+            
+        return f"""
+        <div class="overflow-x-auto border rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clip #</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {rows}
+                </tbody>
+            </table>
+        </div>
+        """
+    except Exception as e:
+        logger.error(f"Error getting clips: {e}")
+        return f"<div class='text-red-600'>Error loading clips: {str(e)}</div>"

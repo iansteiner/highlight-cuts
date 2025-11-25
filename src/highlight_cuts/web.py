@@ -259,12 +259,14 @@ async def list_files():
                 </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
+                <!--
                 <button 
                     hx-get="/player/{rel_path}" 
                     hx-target="#video-player-container" 
                     class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                     Play
                 </button>
+                -->
                 <a href='/download/{rel_path}' 
                    class="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100" 
                    title="Download">

@@ -9,6 +9,9 @@ services:
       - /mnt/data/highlights/input:/app/data
       # Mount the output directory to persist generated highlights
       - /mnt/data/highlights/output:/app/output
+      # Mount source for development
+      - ./src:/app/src
+    command: uv run uvicorn highlight_cuts.web:app --host 0.0.0.0 --port 8000 --reload
     environment:
       - HIGHLIGHT_CUTS_OUTPUT_DIR=/app/output
     restart: unless-stopped

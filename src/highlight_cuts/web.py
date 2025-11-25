@@ -226,21 +226,33 @@ async def list_files():
         # Sort by modification time, newest first
         files = sorted(OUTPUT_DIR.iterdir(), key=os.path.getmtime, reverse=True)
     
-    html = "<ul class='list-disc pl-5 space-y-2'>"
+    html = "<ul class='divide-y divide-gray-100 bg-white rounded-md border border-gray-200 shadow-sm'>"
     for f in files:
         if f.is_file() and not f.name.startswith("."):
             html += f"""
-            <li class="flex items-center gap-4">
-                <span class="font-medium">{f.name}</span>
-                <div class="flex gap-2 text-sm">
+            <li class="flex items-center justify-between p-4 hover:bg-gray-50 transition">
+                <div class="min-w-0 flex-1 flex items-center gap-3 mr-4">
+                    <!-- Video Icon -->
+                    <svg class="h-6 w-6 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span class="truncate font-medium text-gray-900 text-sm" title="{f.name}">{f.name}</span>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
                     <button 
                         hx-get="/player/{f.name}" 
                         hx-target="#video-player-container" 
-                        class="text-blue-600 hover:text-blue-800 hover:underline font-semibold">
+                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                         Play
                     </button>
-                    <span class="text-gray-300">|</span>
-                    <a href='/download/{f.name}' class='text-blue-600 hover:text-blue-800 hover:underline'>Download</a>
+                    <a href='/download/{f.name}' 
+                       class="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100" 
+                       title="Download">
+                       <!-- Download Icon -->
+                       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                       </svg>
+                    </a>
                 </div>
             </li>
             """

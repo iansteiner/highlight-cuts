@@ -4,8 +4,8 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI, Request, Form, BackgroundTasks, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi import FastAPI, Request, Form, BackgroundTasks, HTTPException, Header
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import pandas as pd
@@ -33,8 +33,16 @@ if not DATA_DIR.exists():
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
-# Mount output for downloads (optional, or use a specific endpoint)
-# app.mount("/downloads", StaticFiles(directory=OUTPUT_DIR), name="downloads")
+class NoCacheStaticFiles(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
+# Mount output for streaming with no-cache to help Cloudflare
+app.mount("/videos", NoCacheStaticFiles(directory=str(OUTPUT_DIR)), name="videos")
 
 
 def get_video_files() -> List[str]:
@@ -218,12 +226,47 @@ async def list_files():
         # Sort by modification time, newest first
         files = sorted(OUTPUT_DIR.iterdir(), key=os.path.getmtime, reverse=True)
     
-    html = "<ul class='list-disc pl-5'>"
+    html = "<ul class='list-disc pl-5 space-y-2'>"
     for f in files:
         if f.is_file() and not f.name.startswith("."):
-            html += f"<li><a href='/download/{f.name}' class='text-blue-600 hover:underline'>{f.name}</a></li>"
+            html += f"""
+            <li class="flex items-center gap-4">
+                <span class="font-medium">{f.name}</span>
+                <div class="flex gap-2 text-sm">
+                    <button 
+                        hx-get="/player/{f.name}" 
+                        hx-target="#video-player-container" 
+                        class="text-blue-600 hover:text-blue-800 hover:underline font-semibold">
+                        Play
+                    </button>
+                    <span class="text-gray-300">|</span>
+                    <a href='/download/{f.name}' class='text-blue-600 hover:text-blue-800 hover:underline'>Download</a>
+                </div>
+            </li>
+            """
     html += "</ul>"
     return html
+
+
+@app.get("/player/{filename}", response_class=HTMLResponse)
+async def get_video_player(filename: str):
+    """Returns an HTML fragment with the video player."""
+    file_path = OUTPUT_DIR / filename
+    if not file_path.exists():
+        return "<div class='text-red-600'>File not found</div>"
+    
+    return f"""
+    <div class="bg-black rounded-lg overflow-hidden shadow-lg">
+        <div class="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
+            <span class="font-medium">{filename}</span>
+            <button onclick="this.closest('#video-player-container').innerHTML=''" class="text-gray-400 hover:text-white">&times;</button>
+        </div>
+        <video controls class="w-full max-h-[80vh]" preload="metadata">
+            <source src="/videos/{filename}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    """
 
 
 @app.get("/download/{filename}")

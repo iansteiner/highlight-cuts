@@ -138,7 +138,6 @@ def process_video_task(
     sheet_url: str,
     game: str,
     player: str,
-    padding: float,
     output_filename: str,
 ):
     """Background task to process the video."""
@@ -154,7 +153,7 @@ def process_video_task(
             return
 
         intervals = player_clips[player]
-        merged = merge_intervals(intervals, padding)
+        merged = merge_intervals(intervals)
         
         # 2. Extract and Concat
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -180,7 +179,6 @@ async def process(
     sheet_url: str = Form(...),
     game: str = Form(...),
     player: str = Form(...),
-    padding: float = Form(0.0),
 ):
     """
     Initiates the processing.
@@ -203,7 +201,6 @@ async def process(
         sheet_url,
         game,
         player,
-        padding,
         str(safe_player + "/" + output_filename) # Pass relative path
     )
     

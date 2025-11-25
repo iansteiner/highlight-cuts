@@ -6,9 +6,9 @@ services:
       - "8000:8000"
     volumes:
       # Mount the local directory containing source videos
-      - ./data:/app/data
+      - /mnt/data/highlights/input:/app/data
       # Mount the output directory to persist generated highlights
-      - ./output:/app/output
+      - /mnt/data/highlights/output:/app/output
     environment:
       - HIGHLIGHT_CUTS_OUTPUT_DIR=/app/output
     restart: unless-stopped

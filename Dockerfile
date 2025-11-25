@@ -13,7 +13,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 WORKDIR /app
 
 # Copy dependency files first for caching
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 
 # Install dependencies
 # We use --system to install into the system python environment since we are in a container
@@ -21,7 +21,6 @@ RUN uv sync --frozen --no-dev
 
 # Copy the rest of the application
 COPY src/ src/
-COPY README.md .
 
 # Expose the port
 EXPOSE 8000

@@ -11,12 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   **Google Sheets URL support**: `--csv-file` now accepts Google Sheets URLs in addition to local CSV files. The tool automatically converts sharing URLs to CSV export format.
 -   `--output-dir` option to specify where generated highlight videos should be saved (defaults to current directory).
 -   Automatic creation of output directory if it doesn't exist.
+-   **Web Interface**: A FastAPI-based web UI for generating highlights (`src/highlight_cuts/web.py`).
+-   **Docker Support**: `Dockerfile` and `docker-compose.yml` for easy deployment.
+-   **Testing Infrastructure**: Added `docs/testing_infrastructure.md` and tests for web/docker components.
+-   **Documentation**: Added `docs/web_interface.md`.
 -   **Comprehensive documentation**:
     -   `CONTRIBUTING.md`: Developer guidelines and workflow
     -   `SECURITY.md`: Security policy and best practices
     -   `docs/TROUBLESHOOTING.md`: Comprehensive troubleshooting guide
     -   `docs/architecture.md`: Technical design and architecture documentation
     -   `docs/FAQ.md`: Frequently asked questions
+
+### Enhanced
+-   **Documentation**: Improved project documentation robustness (CONTRIBUTING, SECURITY, etc.).
 -   **Enhanced existing documentation**:
     -   `README.md`: Added badges, system requirements, installation instructions, and use cases
     -   `docs/usage.md`: Added detailed installation steps, common workflows, and best practices

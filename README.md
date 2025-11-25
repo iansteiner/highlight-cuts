@@ -60,7 +60,8 @@ uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1
 ## Documentation
 
 ### Getting Started
-- 📖 [Usage Guide](docs/usage.md) - Installation and basic usage
+- 📖- [Web Interface](docs/web_interface.md): Run the tool in a browser using Docker.
+- [Usage Guide](docs/usage.md): Detailed instructions for the CLI.basic usage
 - 📊 [Google Sheets Guide](docs/google_sheets.md) - Using Google Sheets instead of CSV files
 - ❓ [FAQ](docs/FAQ.md) - Frequently asked questions
 

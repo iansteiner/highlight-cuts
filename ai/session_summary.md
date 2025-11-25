@@ -299,3 +299,38 @@ The user requested a tool to:
 - Security considerations are properly documented
 - All high-priority robustness recommendations implemented
 - Ready to move on to feature development
+
+## Session 5 - 2025-11-24
+
+### 13. Web Interface Prototype
+
+**Objective**: Create a web interface for the tool, deployed via Docker, to allow non-technical users to generate highlights.
+
+#### Implementation
+-   **Tech Stack**: FastAPI (Backend), Jinja2 (Templates), HTMX (Dynamic interactions), Docker.
+-   **Docker Infrastructure**:
+    -   Created `Dockerfile` (Python 3.12-slim, FFmpeg, uv).
+    -   Created `docker-compose.yml` (Services, volumes for data/output).
+-   **Web Application (`src/highlight_cuts/web.py`)**:
+    -   Implemented `GET /` to list video files.
+    -   Implemented `POST /parse-sheet` to parse Google Sheets and return game/player options.
+    -   Implemented `POST /process` to run highlight generation in the background.
+    -   Implemented `GET /download/{filename}` to serve generated files.
+-   **Frontend (`src/highlight_cuts/templates/index.html`)**:
+    -   Created a clean, responsive UI using TailwindCSS (CDN).
+    -   Used HTMX for seamless form updates and file list polling.
+
+#### Testing & Verification
+-   **Infrastructure**: Created `docs/testing_infrastructure.md` to define how to test non-Python components.
+-   **Unit Tests**: Created `tests/test_web.py` to verify endpoints using `TestClient` and mocks.
+-   **Config Tests**: Created `tests/test_docker_config.py` to validate Dockerfile existence and content.
+-   **Results**: All tests passed.
+
+#### Documentation
+-   Created `docs/web_interface.md` with usage instructions.
+-   Updated `README.md` and `docs/CHANGELOG.md`.
+
+#### Outcome
+-   A working prototype of the web interface is ready.
+-   Users can run `docker-compose up` to start the service.
+

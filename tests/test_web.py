@@ -1,0 +1,63 @@
+import pytest
+from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock
+from highlight_cuts.web import app
+
+client = TestClient(app)
+
+def test_read_root():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Highlight Cuts Web" in response.text
+    assert "Video File" in response.text
+
+@patch("highlight_cuts.web.process_csv")
+@patch("requests.get")
+def test_parse_sheet(mock_get, mock_process_csv):
+    # Mock requests.get to return a CSV string
+    mock_response = MagicMock()
+    mock_response.text = "videoName,playerName,startTime,stopTime\nGame1,Player1,00:00,00:10"
+    mock_get.return_value = mock_response
+    
+    # We also need to mock normalize_sheets_url if it makes network calls, 
+    # but currently it only does string manipulation unless it's a specific format.
+    # However, web.py imports normalize_sheets_url inside the function, so we patch it there?
+    # Actually web.py imports it from core.
+    
+    response = client.post(
+        "/parse-sheet", 
+        data={"sheet_url": "https://docs.google.com/spreadsheets/d/123"}
+    )
+    
+    assert response.status_code == 200
+    assert "Game1" in response.text
+    assert "Player1" in response.text
+    assert "<option value='Game1'>Game1</option>" in response.text
+
+@patch("highlight_cuts.web.process_csv")
+@patch("highlight_cuts.web.extract_clip")
+@patch("highlight_cuts.web.concat_clips")
+@patch("highlight_cuts.web.BackgroundTasks.add_task")
+def test_process_endpoint(mock_add_task, mock_concat, mock_extract, mock_process):
+    # We mock the background task addition to verify it was called
+    # But FastAPI TestClient runs background tasks by default unless we intercept them.
+    # Actually, TestClient executes background tasks synchronously after the response.
+    # So we should mock the *target* of the background task if we want to avoid running it,
+    # OR we mock the dependencies of the task (which we did: process_csv, etc).
+    
+    mock_process.return_value = {"Player1": [(0, 10)]}
+    
+    response = client.post(
+        "/process",
+        data={
+            "video_filename": "test.mp4",
+            "sheet_url": "http://example.com/sheet",
+            "game": "Game1",
+            "player": "Player1",
+            "padding": "0.0"
+        }
+    )
+    
+    assert response.status_code == 200
+    assert "Processing" in response.text
+    assert "test_Player1.mp4" in response.text

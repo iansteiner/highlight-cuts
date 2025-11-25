@@ -189,9 +189,12 @@ async def process(
     # game_Player.ext
     input_path = DATA_DIR / video_filename
     safe_player = "".join(c for c in player if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
-    output_filename = f"{Path(video_filename).stem}_{safe_player}{input_path.suffix}"
+    # Create player directory
+    player_dir = OUTPUT_DIR / safe_player
+    player_dir.mkdir(parents=True, exist_ok=True)
     
-    # Check if file already exists? Overwrite for now.
+    # Output filename: video_stem.ext
+    output_filename = f"{Path(video_filename).stem}{input_path.suffix}"
     
     # Run in background
     background_tasks.add_task(
@@ -201,7 +204,7 @@ async def process(
         game,
         player,
         padding,
-        output_filename
+        str(safe_player + "/" + output_filename) # Pass relative path
     )
     
     # Return a "Processing started" message with a polling trigger or download link
@@ -223,70 +226,87 @@ async def list_files():
     """Returns a list of generated files in the output directory."""
     files = []
     if OUTPUT_DIR.exists():
+        # Find all video files recursively
+        for f in OUTPUT_DIR.rglob("*"):
+            if f.is_file() and not f.name.startswith("."):
+                files.append(f)
         # Sort by modification time, newest first
-        files = sorted(OUTPUT_DIR.iterdir(), key=os.path.getmtime, reverse=True)
+        files = sorted(files, key=os.path.getmtime, reverse=True)
     
     html = "<ul class='divide-y divide-gray-100 bg-white rounded-md border border-gray-200 shadow-sm'>"
     for f in files:
-        if f.is_file() and not f.name.startswith("."):
-            html += f"""
-            <li class="flex items-center justify-between p-4 hover:bg-gray-50 transition">
-                <div class="min-w-0 flex-1 flex items-center gap-3 mr-4">
-                    <!-- Video Icon -->
-                    <svg class="h-6 w-6 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span class="truncate font-medium text-gray-900 text-sm" title="{f.name}">{f.name}</span>
+        # Determine relative path and display info
+        rel_path = f.relative_to(OUTPUT_DIR)
+        
+        # If in a subdirectory, use that as Player Name
+        if len(rel_path.parts) > 1:
+            player_name = rel_path.parts[0].replace("_", " ")
+            display_name = f.name
+        else:
+            player_name = "Unknown Player"
+            display_name = f.name
+
+        html += f"""
+        <li class="flex items-center justify-between p-4 hover:bg-gray-50 transition">
+            <div class="min-w-0 flex-1 flex items-center gap-3 mr-4">
+                <!-- Video Icon -->
+                <svg class="h-6 w-6 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <div class="min-w-0">
+                    <p class="text-sm font-bold text-gray-900 truncate">{player_name}</p>
+                    <p class="text-xs text-gray-500 truncate" title="{display_name}">{display_name}</p>
                 </div>
-                <div class="flex items-center gap-3 flex-shrink-0">
-                    <button 
-                        hx-get="/player/{f.name}" 
-                        hx-target="#video-player-container" 
-                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
-                        Play
-                    </button>
-                    <a href='/download/{f.name}' 
-                       class="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100" 
-                       title="Download">
-                       <!-- Download Icon -->
-                       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                       </svg>
-                    </a>
-                </div>
-            </li>
-            """
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <button 
+                    hx-get="/player/{rel_path}" 
+                    hx-target="#video-player-container" 
+                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                    Play
+                </button>
+                <a href='/download/{rel_path}' 
+                   class="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100" 
+                   title="Download">
+                   <!-- Download Icon -->
+                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                   </svg>
+                </a>
+            </div>
+        </li>
+        """
     html += "</ul>"
     return html
 
 
-@app.get("/player/{filename}", response_class=HTMLResponse)
-async def get_video_player(filename: str):
+@app.get("/player/{file_path:path}", response_class=HTMLResponse)
+async def get_video_player(file_path: str):
     """Returns an HTML fragment with the video player."""
-    file_path = OUTPUT_DIR / filename
-    if not file_path.exists():
+    full_path = OUTPUT_DIR / file_path
+    if not full_path.exists():
         return "<div class='text-red-600'>File not found</div>"
     
     return f"""
     <div class="bg-black rounded-lg overflow-hidden shadow-lg">
         <div class="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
-            <span class="font-medium">{filename}</span>
+            <span class="font-medium">{Path(file_path).name}</span>
             <button onclick="this.closest('#video-player-container').innerHTML=''" class="text-gray-400 hover:text-white">&times;</button>
         </div>
-        <video controls class="w-full max-h-[80vh]" preload="metadata">
-            <source src="/videos/{filename}" type="video/mp4">
+        <video controls autoplay class="w-full max-h-[80vh]" preload="metadata">
+            <source src="/videos/{file_path}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
     </div>
     """
 
 
-@app.get("/download/{filename}")
-async def download_file(filename: str):
-    file_path = OUTPUT_DIR / filename
-    if not file_path.exists():
+@app.get("/download/{file_path:path}")
+async def download_file(file_path: str):
+    full_path = OUTPUT_DIR / file_path
+    if not full_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path, filename=filename)
+    return FileResponse(full_path, filename=Path(file_path).name)
 
 
 @app.post("/get-clips", response_class=HTMLResponse)

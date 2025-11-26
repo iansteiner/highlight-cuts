@@ -124,7 +124,7 @@ def process_csv(
         raise
 
     # Expected columns: videoName, startTime, stopTime, playerName
-    required_cols = {"videoName", "startTime", "stopTime", "playerName"}
+    required_cols = {"videoName", "startTime", "stopTime", "playerName", "notes"}
     if not required_cols.issubset(df.columns):
         raise ValueError(
             f"CSV missing required columns. Found: {df.columns}, Expected: {required_cols}"

@@ -38,11 +38,11 @@ def test_merge_intervals_padding_overlap():
 
 
 def test_process_csv():
-    csv_content = """videoName,startTime,stopTime,playerName
-game1,00:01:00,00:01:10,PlayerA
-game1,00:02:00,00:02:10,PlayerA
-game1,00:01:00,00:01:10,PlayerB
-game2,00:05:00,00:05:10,PlayerA
+    csv_content = """videoName,startTime,stopTime,playerName,notes
+game1,00:01:00,00:01:10,PlayerA,
+game1,00:02:00,00:02:10,PlayerA,
+game1,00:01:00,00:01:10,PlayerB,
+game2,00:05:00,00:05:10,PlayerA,
 """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
         f.write(csv_content)
@@ -184,11 +184,11 @@ class TestGoogleSheetsIntegration:
         """Test that local CSV files still work."""
         result = process_csv("tests/fixtures/test_clips.csv", "TestGame")
 
-        assert "Alice" in result
+        assert "Alice Steiner" in result
         assert "Bob" in result
         assert "Charlie" in result
 
-        assert len(result["Alice"]) == 3
+        assert len(result["Alice Steiner"]) == 3
         assert len(result["Bob"]) == 3
         assert len(result["Charlie"]) == 2
 
@@ -198,11 +198,11 @@ class TestGoogleSheetsIntegration:
         url = "https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/edit?usp=sharing"
         result = process_csv(url, "TestGame")
 
-        assert "Alice" in result
+        assert "Alice Steiner" in result
         assert "Bob" in result
         assert "Charlie" in result
 
-        assert len(result["Alice"]) == 3
+        assert len(result["Alice Steiner"]) == 3
         assert len(result["Bob"]) == 3
         assert len(result["Charlie"]) == 2
 

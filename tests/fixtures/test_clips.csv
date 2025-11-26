@@ -1,11 +1,13 @@
-videoName,startTime,stopTime,playerName
-TestGame,00:00:10,00:00:15,Alice
-TestGame,00:00:30,00:00:40,Alice
-TestGame,00:01:00,00:01:10,Alice
-TestGame,00:00:20,00:00:25,Bob
-TestGame,00:00:50,00:01:00,Bob
-TestGame,00:01:20,00:01:30,Bob
-TestGame,00:00:05,00:00:08,Charlie
-TestGame,00:00:45,00:00:48,Charlie
-TestGame2,00:00:15,00:00:20,Alice
-TestGame2,00:00:35,00:00:45,Bob
+"videoName","startTime","stopTime","playerName","notes"
+"TestGame","0:00:10","0:00:15","Alice Steiner","fancy play"
+"TestGame","0:00:30","0:00:40","Alice Steiner","big stop"
+"TestGame","0:01:00","0:01:10","Alice Steiner","huge score"
+"TestGame","0:00:20","0:00:25","Bob","fell on face"
+"TestGame","0:00:50","0:01:00","Bob","pushed someone"
+"TestGame","0:01:20","0:01:30","Bob","yellow card"
+"TestGame","0:00:05","0:00:08","Charlie","celebration"
+"TestGame","0:00:45","0:00:48","Charlie","freaking out"
+"TestGame2","0:00:15","0:00:20","Alice Steiner","multiple 
+lines
+"
+"TestGame2","0:00:35","0:00:45","Bob","another test"

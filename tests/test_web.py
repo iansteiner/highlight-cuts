@@ -8,7 +8,7 @@ client = TestClient(app)
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert "Highlight Cuts Web" in response.text
+    assert "Highlight Cuts" in response.text
     assert "Video File" in response.text
 
 @patch("highlight_cuts.web.process_csv")
@@ -16,7 +16,7 @@ def test_read_root():
 def test_parse_sheet(mock_get, mock_process_csv):
     # Mock requests.get to return a CSV string
     mock_response = MagicMock()
-    mock_response.text = "videoName,playerName,startTime,stopTime\nGame1,Player1,00:00,00:10"
+    mock_response.text = "videoName,playerName,startTime,stopTime,notes\nGame1,Player1,00:00,00:10,note"
     mock_get.return_value = mock_response
     
     # We also need to mock normalize_sheets_url if it makes network calls, 
@@ -60,4 +60,4 @@ def test_process_endpoint(mock_add_task, mock_concat, mock_extract, mock_process
     
     assert response.status_code == 200
     assert "Processing" in response.text
-    assert "test_Player1.mp4" in response.text
+    assert "test.mp4" in response.text

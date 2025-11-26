@@ -87,55 +87,48 @@
                                 <div id="sheet-status" class="text-sm mt-2 min-h-[1.5rem]"></div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Game Selection -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Game</label>
-                                    <div class="relative">
-                                        <select id="game-select" name="game"
-                                            class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border appearance-none"
-                                            required>
-                                            <option value="" disabled selected>Select Game</option>
-                                        </select>
-                                        <div
-                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <!-- Hidden Inputs for Selection -->
+                                <input type="hidden" id="game-input" name="game" required>
+                                <input type="hidden" id="player-input" name="player" required>
 
-                                <!-- Player Selection -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Player</label>
-                                    <div class="relative">
-                                        <select id="player-select" name="player"
-                                            class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border appearance-none"
-                                            required hx-post="/get-clips" hx-target="#clips-table"
-                                            hx-include="[name='sheet_url'], [name='game']" hx-trigger="change">
-                                            <option value="" disabled selected>Select Player</option>
-                                        </select>
-                                        <div
-                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </div>
+                                <!-- Selection Table Container -->
+                                <div id="selection-table-container" class="mt-2">
+                                    <div
+                                        class="text-sm text-gray-500 italic text-center p-4 border rounded-lg bg-gray-50">
+                                        Enter a Sheet URL to load available games and players.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Clips Table -->
-                            <div id="clips-table" class="mt-4"></div>
+                            <script>
+                                function selectSelection(element, game, player) {
+                                    // Update hidden inputs
+                                    document.getElementById('game-input').value = game;
+                                    document.getElementById('player-input').value = player;
+
+                                    // Visual feedback
+                                    // Remove highlight from all rows
+                                    const rows = element.closest('tbody').querySelectorAll('tr');
+                                    rows.forEach(r => {
+                                        r.classList.remove('bg-blue-100', 'ring-2', 'ring-blue-500');
+                                        r.classList.add('hover:bg-gray-50');
+                                    });
+
+                                    // Add highlight to selected row
+                                    element.classList.remove('hover:bg-gray-50');
+                                    element.classList.add('bg-blue-100', 'ring-2', 'ring-blue-500');
+                                }
+                            </script>
 
                             <!-- Submit Button -->
                             <button type="submit"
-                                class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mb-4">
                                 Generate Highlights
                             </button>
+
+                            <!-- Clips Table -->
+                            <div id="clips-table" class="mt-4"></div>
                         </form>
 
                         <!-- Result Area -->

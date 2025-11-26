@@ -30,7 +30,8 @@ def test_parse_sheet(mock_get, mock_process_csv):
     assert response.status_code == 200
     assert "Game1" in response.text
     assert "Player1" in response.text
-    assert "<option value='Game1'>Game1</option>" in response.text
+    assert "Select Game & Player" in response.text
+    assert "onclick=\"selectSelection(this, 'Game1', 'Player1')\"" in response.text
 
 
 @patch("highlight_cuts.web.process_csv")

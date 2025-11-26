@@ -96,39 +96,55 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
         if "videoName" not in df.columns or "playerName" not in df.columns:
             return "<div class='error'>Invalid CSV: Missing videoName or playerName columns</div>"
 
-        games = sorted(df["videoName"].unique().tolist())
-        players = sorted(df["playerName"].unique().tolist())
+        # Group by game and player and count clips
+        # We can also check for 'include' column to count only included clips?
+        # For now, let's count all clips to match the "clip_count" requirement.
+        summary = df.groupby(["videoName", "playerName"]).size().reset_index(name="count")
+        
+        # Sort by Game then Player
+        summary = summary.sort_values(["videoName", "playerName"])
 
-        # Return HTML options for the dropdowns
-        # We'll return a snippet that updates both select boxes if possible,
-        # or just the games, and let the user pick a game?
-        # Actually, the user flow is: Enter URL -> Select Game -> Select Player (filtered by game?)
-        # For simplicity, let's just list all games and all players found in the sheet.
-
-        game_options = "".join([f"<option value='{g}'>{g}</option>" for g in games])
-        player_options = "".join([f"<option value='{p}'>{p}</option>" for p in players])
-
-        # We use OOB swaps or just return a block containing both selects?
-        # HTMX is best with returning the specific element to replace.
-        # But we need to update TWO elements.
-        # We can use hx-swap-oob.
-
-        return f"""
-        <select id="game-select" name="game" hx-swap-oob="true">
-            <option value="" disabled selected>Select Game</option>
-            {game_options}
-        </select>
-        <select id="player-select" name="player" 
-                hx-swap-oob="true"
+        rows = ""
+        for _, row in summary.iterrows():
+            game = row["videoName"]
+            player = row["playerName"]
+            count = row["count"]
+            
+            rows += f"""
+            <tr onclick="selectSelection(this, '{game}', '{player}')"
                 hx-post="/get-clips"
+                hx-vals='{{"game": "{game}", "player": "{player}"}}'
+                hx-include="[name='sheet_url']"
                 hx-target="#clips-table"
-                hx-include="[name='sheet_url'], [name='game']"
-                hx-trigger="change">
-            <option value="" disabled selected>Select Player</option>
-            {player_options}
-        </select>
+                class="cursor-pointer hover:bg-gray-50 transition border-b border-gray-100 last:border-b-0">
+                <td class="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900">{game}</td>
+                <td class="px-6 py-1 whitespace-nowrap text-sm text-gray-500">{player}</td>
+                <td class="px-6 py-1 whitespace-nowrap text-sm text-gray-500">{count}</td>
+            </tr>
+            """
+
+        table_html = f"""
+        <div id="selection-table-container" hx-swap-oob="true" class="mt-4 col-span-2">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Select Game & Player</label>
+            <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Game</th>
+                            <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                            <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clips</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <div id="sheet-status" hx-swap-oob="true" class="text-green-600">Sheet loaded successfully!</div>
         """
+
+        return table_html
 
     except Exception as e:
         logger.error(f"Error parsing sheet: {e}")
@@ -259,7 +275,7 @@ async def list_files():
             display_name = f.name
 
         html += f"""
-        <li class="flex items-center justify-between p-4 hover:bg-gray-50 transition">
+        <li class="flex items-center justify-between p-2 hover:bg-gray-50 transition">
             <div class="min-w-0 flex-1 flex items-center gap-3 mr-4">
                 <!-- Video Icon -->
                 <svg class="h-6 w-6 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -349,9 +365,9 @@ async def get_clips(
 
             rows += f"""
             <tr class="{row_class}">
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{int(clip.start)}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{int(clip.end)}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{clip.notes}</td>
+                <td class="px-6 py-1 whitespace-nowrap text-sm">{int(clip.start)}s</td>
+                <td class="px-6 py-1 whitespace-nowrap text-sm">{int(clip.end)}s</td>
+                <td class="px-6 py-1 whitespace-nowrap text-sm">{clip.notes}</td>
             </tr>
             """
 
@@ -360,9 +376,9 @@ async def get_clips(
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
+                        <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
+                        <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">

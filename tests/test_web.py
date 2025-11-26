@@ -6,11 +6,16 @@ from highlight_cuts.core import Clip
 client = TestClient(app)
 
 
-def test_read_root():
+@patch("highlight_cuts.web.get_video_structure")
+def test_read_root(mock_get_structure):
+    mock_get_structure.return_value = {
+        "TeamA": {"Tourney1": [{"name": "Game1", "path": "TeamA/Tourney1/Game1.mp4"}]}
+    }
     response = client.get("/")
     assert response.status_code == 200
     assert "Highlight Cuts" in response.text
-    assert "Video File" in response.text
+    assert "Video Selection" in response.text
+    assert "TeamA" in response.text
 
 
 @patch("highlight_cuts.web.process_csv")
@@ -45,7 +50,7 @@ def test_process_endpoint(mock_add_task, mock_concat, mock_extract, mock_process
     response = client.post(
         "/process",
         data={
-            "video_filename": "test.mp4",
+            "video_filename": "TeamA/Tourney1/Game1.mp4",
             "sheet_url": "http://example.com/sheet",
             "game": "Game1",
             "player": "Player1",
@@ -55,4 +60,7 @@ def test_process_endpoint(mock_add_task, mock_concat, mock_extract, mock_process
 
     assert response.status_code == 200
     assert "Processing" in response.text
-    assert "test.mp4" in response.text
+    # Check for new output filename format: player_team/tournament_game.mp4
+    # Player1, TeamA -> Player1_TeamA directory
+    # Tourney1, Game1 -> Tourney1_Game1.mp4 filename
+    assert "Player1_TeamA/Tourney1_Game1.mp4" in response.text

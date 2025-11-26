@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 from fastapi import FastAPI, Request, Form, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
@@ -47,22 +47,73 @@ class NoCacheStaticFiles(StaticFiles):
 app.mount("/videos", NoCacheStaticFiles(directory=str(OUTPUT_DIR)), name="videos")
 
 
-def get_video_files() -> List[str]:
-    """List supported video files in the data directory."""
+def get_video_structure() -> Dict:
+    """
+    Scan data directory for video files in format: team/tournament/game.mp4
+    Returns a nested dict: {team: {tournament: [{name: game_name, path: relative_path}]}}
+    """
     extensions = {".mp4", ".mov", ".mkv", ".avi", ".ts"}
-    files = []
+    structure = {}
+    
     if DATA_DIR.exists():
-        for f in DATA_DIR.iterdir():
+        for f in DATA_DIR.rglob("*"):
             if f.is_file() and f.suffix.lower() in extensions:
-                files.append(f.name)
-    return sorted(files)
+                rel_path = f.relative_to(DATA_DIR)
+                parts = rel_path.parts
+                
+                # Expected: team/tournament/game.mp4
+                if len(parts) >= 3:
+                    team = parts[0]
+                    tournament = parts[1]
+                    game_file = parts[-1]
+                    # Use the file stem as the game name for display, or the full filename?
+                    # User said "game.mp4", so display "game"
+                    game_name = f.stem
+                    
+                    if team not in structure:
+                        structure[team] = {}
+                    if tournament not in structure[team]:
+                        structure[team][tournament] = []
+                        
+                    structure[team][tournament].append({
+                        "name": game_name,
+                        "path": str(rel_path)
+                    })
+                else:
+                    # Handle files not in expected structure (e.g. root or 1 level deep)
+                    # Put them in "Uncategorized" -> "Misc"
+                    team = "Uncategorized"
+                    tournament = "Misc"
+                    game_name = f.stem
+                    
+                    if team not in structure:
+                        structure[team] = {}
+                    if tournament not in structure[team]:
+                        structure[team][tournament] = []
+                        
+                    structure[team][tournament].append({
+                        "name": game_name,
+                        "path": str(rel_path)
+                    })
+                    
+    # Sort keys
+    sorted_structure = {}
+    for team in sorted(structure.keys()):
+        sorted_structure[team] = {}
+        for tournament in sorted(structure[team].keys()):
+            # Sort games by name
+            sorted_structure[team][tournament] = sorted(
+                structure[team][tournament], key=lambda x: x["name"]
+            )
+            
+    return sorted_structure
 
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    video_files = get_video_files()
+    video_structure = get_video_structure()
     return templates.TemplateResponse(
-        "index.html", {"request": request, "video_files": video_files}
+        "index.html", {"request": request, "video_structure": video_structure}
     )
 
 
@@ -211,19 +262,42 @@ async def process(
     Initiates the processing.
     """
     # Generate output filename
-    # game_Player.ext
+    # Format: player_team_tournament_game.mp4
     input_path = DATA_DIR / video_filename
+    
+    # Parse parts from video_filename (relative path)
+    # Expected: team/tournament/game.mp4
+    parts = Path(video_filename).parts
+    if len(parts) >= 3:
+        team = parts[0]
+        tournament = parts[1]
+        game_name = Path(parts[-1]).stem
+    else:
+        # Fallback
+        team = "UnknownTeam"
+        tournament = "UnknownTournament"
+        game_name = Path(video_filename).stem
+
     safe_player = (
         "".join(c for c in player if c.isalnum() or c in (" ", "_", "-"))
         .strip()
         .replace(" ", "_")
     )
-    # Create player directory
-    player_dir = OUTPUT_DIR / safe_player
+    
+    # Sanitize other parts
+    safe_team = "".join(c for c in team if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
+    safe_tournament = "".join(c for c in tournament if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
+    safe_game = "".join(c for c in game_name if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
+
+    # Create player_team directory
+    # Format: player_team
+    player_team_dir_name = f"{safe_player}_{safe_team}"
+    player_dir = OUTPUT_DIR / player_team_dir_name
     player_dir.mkdir(parents=True, exist_ok=True)
 
-    # Output filename: video_stem.ext
-    output_filename = f"{Path(video_filename).stem}{input_path.suffix}"
+    # Output filename: tournament_game.ext
+    # Format: tournament_game.mp4
+    output_filename = f"{safe_tournament}_{safe_game}{input_path.suffix}"
 
     # Run in background
     background_tasks.add_task(
@@ -232,7 +306,7 @@ async def process(
         sheet_url,
         game,
         player,
-        str(safe_player + "/" + output_filename),  # Pass relative path
+        str(player_team_dir_name + "/" + output_filename),  # Pass relative path
     )
 
     # Return a "Processing started" message with a polling trigger or download link
@@ -243,7 +317,7 @@ async def process(
     return f"""
     <div class="p-4 bg-blue-100 text-blue-800 rounded">
         Processing <strong>{player}</strong> in <strong>{game}</strong>...<br>
-        Output will be: {output_filename}<br>
+        Output will be: {player_team_dir_name}/{output_filename}<br>
         <button hx-get="/files" hx-target="#file-list" class="mt-2 underline">Refresh File List</button>
     </div>
     """

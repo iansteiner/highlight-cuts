@@ -38,33 +38,111 @@
                     <div class="p-8">
                         <form hx-post="/process" hx-target="#result-area" class="space-y-6">
 
-                            <!-- Video File Selection -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Video File</label>
-                                <div class="relative">
-                                    <select name="video_filename"
-                                        class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border appearance-none"
-                                        required>
-                                        {% for file in video_files %}
-                                        <option value="{{ file }}">{{ file }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div
-                                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 9l-7 7-7-7"></path>
-                                        </svg>
+                            <!-- Video Selection (Team -> Tournament -> Game) -->
+                            <div class="space-y-4">
+                                <label class="block text-sm font-semibold text-gray-700">Video Selection</label>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <!-- Team Select -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Team</label>
+                                        <select id="team-select" onchange="updateTournaments()"
+                                            class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border appearance-none">
+                                            <option value="" disabled selected>Select Team</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Tournament Select -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Tournament</label>
+                                        <select id="tournament-select" onchange="updateGames()" disabled
+                                            class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border appearance-none disabled:bg-gray-100 disabled:text-gray-400">
+                                            <option value="" disabled selected>Select Tournament</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Game Select -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Game</label>
+                                        <select id="game-select-video" onchange="updateVideoPath()" disabled
+                                            class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border appearance-none disabled:bg-gray-100 disabled:text-gray-400">
+                                            <option value="" disabled selected>Select Game</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-2 flex items-center">
+
+                                <!-- Hidden input for the actual file path sent to server -->
+                                <input type="hidden" name="video_filename" id="video-filename-input" required>
+
+                                <p class="text-xs text-gray-500 mt-1 flex items-center">
                                     <svg class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    Files located in <code>/data</code> directory
+                                    Files located in <code>/data/team/tournament/game.mp4</code>
                                 </p>
                             </div>
+
+                            <script>
+                                // Pass the video structure from Python to JS
+                                const videoStructure = {{ video_structure | tojson }};
+
+                                const teamSelect = document.getElementById('team-select');
+                                const tournamentSelect = document.getElementById('tournament-select');
+                                const gameSelect = document.getElementById('game-select-video');
+                                const videoInput = document.getElementById('video-filename-input');
+
+                                // Initialize Teams
+                                for (const team in videoStructure) {
+                                    const option = document.createElement('option');
+                                    option.value = team;
+                                    option.textContent = team;
+                                    teamSelect.appendChild(option);
+                                }
+
+                                function updateTournaments() {
+                                    const team = teamSelect.value;
+                                    tournamentSelect.innerHTML = '<option value="" disabled selected>Select Tournament</option>';
+                                    gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
+                                    gameSelect.disabled = true;
+                                    videoInput.value = "";
+
+                                    if (team && videoStructure[team]) {
+                                        tournamentSelect.disabled = false;
+                                        for (const tournament in videoStructure[team]) {
+                                            const option = document.createElement('option');
+                                            option.value = tournament;
+                                            option.textContent = tournament;
+                                            tournamentSelect.appendChild(option);
+                                        }
+                                    } else {
+                                        tournamentSelect.disabled = true;
+                                    }
+                                }
+
+                                function updateGames() {
+                                    const team = teamSelect.value;
+                                    const tournament = tournamentSelect.value;
+                                    gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
+                                    videoInput.value = "";
+
+                                    if (team && tournament && videoStructure[team][tournament]) {
+                                        gameSelect.disabled = false;
+                                        videoStructure[team][tournament].forEach(game => {
+                                            const option = document.createElement('option');
+                                            option.value = game.path; // Store the relative path as value
+                                            option.textContent = game.name;
+                                            gameSelect.appendChild(option);
+                                        });
+                                    } else {
+                                        gameSelect.disabled = true;
+                                    }
+                                }
+
+                                function updateVideoPath() {
+                                    videoInput.value = gameSelect.value;
+                                }
+                            </script>
 
                             <!-- Google Sheet URL -->
                             <div>

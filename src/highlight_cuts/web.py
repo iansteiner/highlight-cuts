@@ -413,9 +413,18 @@ async def download_file(file_path: str):
     return FileResponse(full_path, filename=Path(file_path).name)
 
 
+def format_seconds(seconds: float) -> str:
+    """Format seconds as MM:SS."""
+    m, s = divmod(int(seconds), 60)
+    return f"{m:02d}:{s:02d}"
+
+
 @app.post("/get-clips", response_class=HTMLResponse)
 async def get_clips(
-    sheet_url: str = Form(...), game: str = Form(...), player: str = Form(...)
+    request: Request,
+    sheet_url: str = Form(...),
+    game: str = Form(...),
+    player: str = Form(...),
 ):
     """
     Returns an HTML table of clips for the selected player.
@@ -429,33 +438,34 @@ async def get_clips(
         clips = player_clips[player]
 
         # Create table rows
-        # Create table rows
         rows = ""
-        for i, clip in enumerate(clips):
-            if clip.included:
-                row_class = "hover:bg-gray-50"
-            else:
-                row_class = "bg-gray-50 text-gray-400"
-
+        for clip in clips:
+            bg_class = "bg-red-50 text-red-800" if not clip.included else "hover:bg-gray-50"
+            opacity_class = "opacity-50" if not clip.included else ""
+            
+            # Format timestamps
+            start_str = format_seconds(clip.start)
+            end_str = format_seconds(clip.end)
+            
             rows += f"""
-            <tr class="{row_class}">
-                <td class="px-6 py-1 whitespace-nowrap text-sm">{int(clip.start)}s</td>
-                <td class="px-6 py-1 whitespace-nowrap text-sm">{int(clip.end)}s</td>
-                <td class="px-6 py-1 whitespace-nowrap text-sm">{clip.notes}</td>
+            <tr class="border-b {bg_class} {opacity_class} transition-colors">
+                <td class="py-1 px-4 font-mono text-sm">{start_str}</td>
+                <td class="py-1 px-4 font-mono text-sm">{end_str}</td>
+                <td class="py-1 px-4 text-center text-sm text-gray-600">{clip.notes}</td>
             </tr>
             """
 
         return f"""
         <div class="overflow-x-auto border rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
                     <tr>
-                        <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
-                        <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
-                        <th scope="col" class="px-6 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th class="py-1 px-4 text-left">Start</th>
+                        <th class="py-1 px-4 text-left">End</th>
+                        <th class="py-1 px-4 text-center">Notes</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="text-gray-600 text-sm font-light">
                     {rows}
                 </tbody>
             </table>
@@ -464,3 +474,4 @@ async def get_clips(
     except Exception as e:
         logger.error(f"Error getting clips: {e}")
         return f"<div class='text-red-600'>Error loading clips: {str(e)}</div>"
+

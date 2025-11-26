@@ -31,10 +31,10 @@ def test_get_clips_success(mock_process_csv):
     )  # The player name isn't in the table, but the clips are
     assert "Included" not in response.text
     assert "Skipped" not in response.text
-    assert "10s" in response.text
-    assert "20s" in response.text
-    assert "30s" in response.text
-    assert "40s" in response.text
+    assert "00:10" in response.text
+    assert "00:20" in response.text
+    assert "00:30" in response.text
+    assert "00:40" in response.text
     assert "Test Note 1" in response.text
     assert "Test Note 2" in response.text
 
@@ -56,9 +56,9 @@ def test_get_clips_skipped(mock_process_csv):
     )
 
     assert response.status_code == 200
-    assert "10s" in response.text
+    assert "00:10" in response.text
     assert "Skipped" not in response.text
-    assert "bg-gray-50 text-gray-400" in response.text
+    assert "bg-red-50 text-red-800" in response.text
 
 
 @patch("highlight_cuts.web.process_csv")
@@ -77,7 +77,7 @@ def test_get_clips_no_player(mock_process_csv):
     )
 
     assert response.status_code == 200
-    assert "No clips found for player Player2" in response.text
+    assert "No clips found for player Player2 in game Game1" in response.text
 
 
 @patch("highlight_cuts.web.process_csv")

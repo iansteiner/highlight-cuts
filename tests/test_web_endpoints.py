@@ -11,8 +11,8 @@ def test_get_clips_success(mock_process_csv):
     # Mock the process_csv return value
     mock_process_csv.return_value = {
         "Player1": [
-            Clip(start=10.0, end=20.0, included=True),
-            Clip(start=30.0, end=40.0, included=True),
+            Clip(start=10.0, end=20.0, included=True, notes="Test Note 1"),
+            Clip(start=30.0, end=40.0, included=True, notes="Test Note 2"),
         ]
     }
 
@@ -29,10 +29,14 @@ def test_get_clips_success(mock_process_csv):
     assert (
         "Player1" not in response.text
     )  # The player name isn't in the table, but the clips are
-    assert "10.00s" in response.text
-    assert "20.00s" in response.text
-    assert "10.00s" in response.text  # Duration
-    assert "Included" in response.text
+    assert "Included" not in response.text
+    assert "Skipped" not in response.text
+    assert "10s" in response.text
+    assert "20s" in response.text
+    assert "30s" in response.text
+    assert "40s" in response.text
+    assert "Test Note 1" in response.text
+    assert "Test Note 2" in response.text
 
 
 @patch("highlight_cuts.web.process_csv")
@@ -52,8 +56,8 @@ def test_get_clips_skipped(mock_process_csv):
     )
 
     assert response.status_code == 200
-    assert "10.00s" in response.text
-    assert "Skipped" in response.text
+    assert "10s" in response.text
+    assert "Skipped" not in response.text
     assert "bg-gray-50 text-gray-400" in response.text
 
 

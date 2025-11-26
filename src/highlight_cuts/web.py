@@ -339,24 +339,19 @@ async def get_clips(
         clips = player_clips[player]
 
         # Create table rows
+        # Create table rows
         rows = ""
         for i, clip in enumerate(clips):
-            duration = clip.end - clip.start
-
             if clip.included:
                 row_class = "hover:bg-gray-50"
-                status_badge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Included</span>'
             else:
                 row_class = "bg-gray-50 text-gray-400"
-                status_badge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Skipped</span>'
 
             rows += f"""
             <tr class="{row_class}">
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{i + 1}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{clip.start:.2f}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{clip.end:.2f}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{duration:.2f}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm">{status_badge}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{int(clip.start)}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{int(clip.end)}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{clip.notes}</td>
             </tr>
             """
 
@@ -365,11 +360,9 @@ async def get_clips(
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clip #</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">

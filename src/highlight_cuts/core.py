@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 from typing import List, Tuple, Dict
+from dataclasses import dataclass
 from .utils import parse_time
 
 logger = logging.getLogger(__name__)
@@ -89,9 +90,15 @@ def merge_intervals(
     return merged
 
 
-def process_csv(
-    csv_source: str, game_name: str
-) -> Dict[str, List[Tuple[float, float]]]:
+@dataclass
+class Clip:
+    start: float
+    end: float
+    notes: str = ""
+    included: bool = True
+
+
+def process_csv(csv_source: str, game_name: str) -> Dict[str, List[Clip]]:
     """
     Reads CSV from file path or URL, filters by game name, and groups clips by player.
 
@@ -100,7 +107,7 @@ def process_csv(
         game_name: Name of the video/game to filter by.
 
     Returns:
-        Dictionary mapping player name to a list of (start, end) intervals.
+        Dictionary mapping player name to a list of Clip objects.
     """
     # Normalize Google Sheets URLs to CSV export format
     csv_source = normalize_sheets_url(csv_source)
@@ -124,7 +131,22 @@ def process_csv(
         raise
 
     # Expected columns: videoName, startTime, stopTime, playerName
-    required_cols = {"videoName", "startTime", "stopTime", "playerName", "notes"}
+    # "notes" and "include" are optional in the sense that we can handle them if missing,
+    # but the requirements say "read in the include column", implying it should be there.
+    # However, for backward compatibility, maybe we should allow it to be missing?
+    # The user said "I have now updated the source docs to have an include column".
+    # So we should expect it.
+
+    # Let's handle "include" being optional for backward compat if possible,
+    # but strictly validate if present.
+    # Actually, let's enforce it if the user says they updated the docs.
+    # But wait, existing CSVs might break.
+    # Let's check if "include" is in columns. If not, assume True for all?
+    # The user said "please update the code to read in the include column".
+    # I'll add it to required_cols if I want to enforce it.
+    # But to be safe, I'll check if it exists.
+
+    required_cols = {"videoName", "startTime", "stopTime", "playerName"}
     if not required_cols.issubset(df.columns):
         raise ValueError(
             f"CSV missing required columns. Found: {df.columns}, Expected: {required_cols}"
@@ -144,10 +166,47 @@ def process_csv(
         logger.error(f"Error parsing timestamps: {e}")
         raise
 
+    # Parse include column
+    if "include" in game_df.columns:
+
+        def parse_include(val):
+            s = str(val).strip().lower()
+            if s in ("true", "yes", "1"):
+                return True
+            if s in ("false", "no", "0"):
+                return False
+            if s == "" or s == "nan" or pd.isna(val):
+                return True  # Blank means True
+            # Detect anything that is not true or false or blank
+            raise ValueError(f"Invalid value for 'include': {val}")
+
+        try:
+            game_df["included"] = game_df["include"].apply(parse_include)
+        except ValueError as e:
+            logger.error(f"Validation error in include column: {e}")
+            raise
+    else:
+        game_df["included"] = True
+
+    # Handle notes
+    if "notes" not in game_df.columns:
+        game_df["notes"] = ""
+    else:
+        game_df["notes"] = game_df["notes"].fillna("")
+
     # Group by player
     player_clips = {}
     for player, group in game_df.groupby("playerName"):
-        intervals = list(zip(group["start_seconds"], group["end_seconds"]))
-        player_clips[player] = intervals
+        clips = []
+        for _, row in group.iterrows():
+            clips.append(
+                Clip(
+                    start=row["start_seconds"],
+                    end=row["end_seconds"],
+                    notes=str(row["notes"]),
+                    included=row["included"],
+                )
+            )
+        player_clips[player] = clips
 
     return player_clips

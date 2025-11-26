@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 -   **Google Sheets URL support**: `--csv-file` now accepts Google Sheets URLs in addition to local CSV files. The tool automatically converts sharing URLs to CSV export format.
+-   **Include/Exclude Logic**: Added support for an `include` column in the CSV/Sheet to selectively skip clips.
+-   **Notes Support**: Added support for a `notes` column in the CSV/Sheet.
 -   `--output-dir` option to specify where generated highlight videos should be saved (defaults to current directory).
 -   Automatic creation of output directory if it doesn't exist.
 -   **Web Interface**: A FastAPI-based web UI for generating highlights (`src/highlight_cuts/web.py`).

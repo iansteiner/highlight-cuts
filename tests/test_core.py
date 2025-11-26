@@ -38,11 +38,11 @@ def test_merge_intervals_padding_overlap():
 
 
 def test_process_csv():
-    csv_content = """videoName,startTime,stopTime,playerName,notes
-game1,00:01:00,00:01:10,PlayerA,
-game1,00:02:00,00:02:10,PlayerA,
-game1,00:01:00,00:01:10,PlayerB,
-game2,00:05:00,00:05:10,PlayerA,
+    csv_content = """videoName,startTime,stopTime,playerName,notes,include
+game1,00:01:00,00:01:10,PlayerA,,true
+game1,00:02:00,00:02:10,PlayerA,,False
+game1,00:01:00,00:01:10,PlayerB,,
+game2,00:05:00,00:05:10,PlayerA,,
 """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
         f.write(csv_content)
@@ -53,10 +53,13 @@ game2,00:05:00,00:05:10,PlayerA,
         clips = process_csv(csv_path, "game1")
         assert "PlayerA" in clips
         assert len(clips["PlayerA"]) == 2
-        assert clips["PlayerA"][0] == (60.0, 70.0)
+        assert clips["PlayerA"][0].start == 60.0
+        assert clips["PlayerA"][0].included is True
+        assert clips["PlayerA"][1].included is False
 
         assert "PlayerB" in clips
         assert len(clips["PlayerB"]) == 1
+        assert clips["PlayerB"][0].included is True  # Blank defaults to True
 
         # Test game2
         clips2 = process_csv(csv_path, "game2")

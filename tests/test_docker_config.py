@@ -1,7 +1,7 @@
-import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 def test_dockerfile_exists():
     dockerfile = BASE_DIR / "Dockerfile"
@@ -10,6 +10,7 @@ def test_dockerfile_exists():
     assert "FROM python:3.12-slim" in content
     assert "RUN uv sync" in content
     assert "EXPOSE 8000" in content
+
 
 def test_docker_compose_exists():
     compose = BASE_DIR / "docker-compose.yml"

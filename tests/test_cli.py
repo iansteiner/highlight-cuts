@@ -2,6 +2,7 @@ import pytest
 from click.testing import CliRunner
 from unittest.mock import patch
 from highlight_cuts.cli import main
+from highlight_cuts.core import Clip
 
 
 @pytest.fixture
@@ -46,7 +47,7 @@ def test_cli_dry_run(mock_merge, mock_process, runner, caplog):
     import logging
 
     caplog.set_level(logging.INFO)
-    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_process.return_value = {"Player1": [Clip(start=0.0, end=10.0, included=True)]}
     mock_merge.return_value = [(0, 10)]
 
     with runner.isolated_filesystem():
@@ -77,7 +78,7 @@ def test_cli_dry_run(mock_merge, mock_process, runner, caplog):
 @patch("highlight_cuts.cli.extract_clip")
 @patch("highlight_cuts.cli.concat_clips")
 def test_cli_success(mock_concat, mock_extract, mock_merge, mock_process, runner):
-    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_process.return_value = {"Player1": [Clip(start=0.0, end=10.0, included=True)]}
     mock_merge.return_value = [(0, 10)]
 
     with runner.isolated_filesystem():
@@ -100,7 +101,7 @@ def test_cli_success(mock_concat, mock_extract, mock_merge, mock_process, runner
 @patch("highlight_cuts.cli.merge_intervals")
 @patch("highlight_cuts.cli.extract_clip")
 def test_cli_extraction_error(mock_extract, mock_merge, mock_process, runner):
-    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_process.return_value = {"Player1": [Clip(start=0.0, end=10.0, included=True)]}
     mock_merge.return_value = [(0, 10)]
     mock_extract.side_effect = Exception("Extract Error")
 
@@ -123,7 +124,7 @@ def test_cli_extraction_error(mock_extract, mock_merge, mock_process, runner):
 @patch("highlight_cuts.cli.concat_clips")
 def test_cli_output_dir(mock_concat, mock_extract, mock_merge, mock_process, runner):
     """Test that --output-dir creates files in the specified directory."""
-    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_process.return_value = {"Player1": [Clip(start=0.0, end=10.0, included=True)]}
     mock_merge.return_value = [(0, 10)]
 
     with runner.isolated_filesystem():
@@ -164,7 +165,7 @@ def test_cli_output_dir_created(
     """Test that --output-dir creates the directory if it doesn't exist."""
     import os
 
-    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_process.return_value = {"Player1": [Clip(start=0.0, end=10.0, included=True)]}
     mock_merge.return_value = [(0, 10)]
 
     with runner.isolated_filesystem():
@@ -204,7 +205,7 @@ def test_cli_default_output_dir(
     mock_concat, mock_extract, mock_merge, mock_process, runner
 ):
     """Test that without --output-dir, files are created in current directory."""
-    mock_process.return_value = {"Player1": [(0, 10)]}
+    mock_process.return_value = {"Player1": [Clip(start=0.0, end=10.0, included=True)]}
     mock_merge.return_value = [(0, 10)]
 
     with runner.isolated_filesystem():

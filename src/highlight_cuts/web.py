@@ -2,10 +2,10 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
-from fastapi import FastAPI, Request, Form, BackgroundTasks, HTTPException, Header
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, StreamingResponse
+from fastapi import FastAPI, Request, Form, BackgroundTasks, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import pandas as pd
@@ -33,6 +33,7 @@ if not DATA_DIR.exists():
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+
 class NoCacheStaticFiles(StaticFiles):
     def file_response(self, *args, **kwargs):
         response = super().file_response(*args, **kwargs)
@@ -40,6 +41,7 @@ class NoCacheStaticFiles(StaticFiles):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         return response
+
 
 # Mount output for streaming with no-cache to help Cloudflare
 app.mount("/videos", NoCacheStaticFiles(directory=str(OUTPUT_DIR)), name="videos")
@@ -76,13 +78,13 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
         # For now, I'll duplicate the reading logic slightly to get the full DF
         # or better, refactor core. But to avoid breaking changes, I'll use process_csv's normalize
         # and then read it.
-        
+
         from .core import normalize_sheets_url
         import requests
         import io
 
         url = normalize_sheets_url(sheet_url)
-        
+
         if url.startswith("https://docs.google.com/spreadsheets"):
             response = requests.get(url)
             response.raise_for_status()
@@ -102,15 +104,15 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
         # or just the games, and let the user pick a game?
         # Actually, the user flow is: Enter URL -> Select Game -> Select Player (filtered by game?)
         # For simplicity, let's just list all games and all players found in the sheet.
-        
+
         game_options = "".join([f"<option value='{g}'>{g}</option>" for g in games])
         player_options = "".join([f"<option value='{p}'>{p}</option>" for p in players])
-        
+
         # We use OOB swaps or just return a block containing both selects?
         # HTMX is best with returning the specific element to replace.
         # But we need to update TWO elements.
         # We can use hx-swap-oob.
-        
+
         return f"""
         <select id="game-select" name="game" hx-swap-oob="true">
             <option value="" disabled selected>Select Game</option>
@@ -144,17 +146,26 @@ def process_video_task(
     try:
         input_path = DATA_DIR / video_filename
         output_path = OUTPUT_DIR / output_filename
-        
+
         # 1. Get clips
         player_clips = process_csv(sheet_url, game)
-        
+
         if player not in player_clips:
             logger.error(f"Player {player} not found in game {game}")
             return
 
-        intervals = player_clips[player]
+        all_clips = player_clips[player]
+        # Filter for included clips
+        intervals = [(c.start, c.end) for c in all_clips if c.included]
+
+        if not intervals:
+            logger.warning(f"No included clips for player {player}")
+            # Should we create an empty video or just return?
+            # For now, let's return to avoid errors in extract/concat
+            return
+
         merged = merge_intervals(intervals)
-        
+
         # 2. Extract and Concat
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_clips = []
@@ -163,7 +174,7 @@ def process_video_task(
                 clip_path = os.path.join(temp_dir, clip_name)
                 extract_clip(str(input_path), start, end, clip_path)
                 temp_clips.append(clip_path)
-            
+
             concat_clips(temp_clips, str(output_path))
             logger.info(f"Created {output_path}")
 
@@ -186,14 +197,18 @@ async def process(
     # Generate output filename
     # game_Player.ext
     input_path = DATA_DIR / video_filename
-    safe_player = "".join(c for c in player if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
+    safe_player = (
+        "".join(c for c in player if c.isalnum() or c in (" ", "_", "-"))
+        .strip()
+        .replace(" ", "_")
+    )
     # Create player directory
     player_dir = OUTPUT_DIR / safe_player
     player_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Output filename: video_stem.ext
     output_filename = f"{Path(video_filename).stem}{input_path.suffix}"
-    
+
     # Run in background
     background_tasks.add_task(
         process_video_task,
@@ -201,14 +216,14 @@ async def process(
         sheet_url,
         game,
         player,
-        str(safe_player + "/" + output_filename) # Pass relative path
+        str(safe_player + "/" + output_filename),  # Pass relative path
     )
-    
+
     # Return a "Processing started" message with a polling trigger or download link
     # Since we don't have a DB, we can't easily poll status.
     # For this prototype, we'll just say "Processing started. Check back in a minute."
     # and list the file in a "Recent Files" section (which we can implement via polling).
-    
+
     return f"""
     <div class="p-4 bg-blue-100 text-blue-800 rounded">
         Processing <strong>{player}</strong> in <strong>{game}</strong>...<br>
@@ -229,12 +244,12 @@ async def list_files():
                 files.append(f)
         # Sort by modification time, newest first
         files = sorted(files, key=os.path.getmtime, reverse=True)
-    
+
     html = "<ul class='divide-y divide-gray-100 bg-white rounded-md border border-gray-200 shadow-sm'>"
     for f in files:
         # Determine relative path and display info
         rel_path = f.relative_to(OUTPUT_DIR)
-        
+
         # If in a subdirectory, use that as Player Name
         if len(rel_path.parts) > 1:
             player_name = rel_path.parts[0].replace("_", " ")
@@ -285,7 +300,7 @@ async def get_video_player(file_path: str):
     full_path = OUTPUT_DIR / file_path
     if not full_path.exists():
         return "<div class='text-red-600'>File not found</div>"
-    
+
     return f"""
     <div class="bg-black rounded-lg overflow-hidden shadow-lg">
         <div class="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
@@ -310,34 +325,41 @@ async def download_file(file_path: str):
 
 @app.post("/get-clips", response_class=HTMLResponse)
 async def get_clips(
-    sheet_url: str = Form(...),
-    game: str = Form(...),
-    player: str = Form(...)
+    sheet_url: str = Form(...), game: str = Form(...), player: str = Form(...)
 ):
     """
     Returns an HTML table of clips for the selected player.
     """
     try:
         player_clips = process_csv(sheet_url, game)
-        
+
         if player not in player_clips:
             return f"<div class='text-red-600'>No clips found for player {player} in game {game}</div>"
 
-        intervals = player_clips[player]
-        
+        clips = player_clips[player]
+
         # Create table rows
         rows = ""
-        for i, (start, end) in enumerate(intervals):
-            duration = end - start
+        for i, clip in enumerate(clips):
+            duration = clip.end - clip.start
+
+            if clip.included:
+                row_class = "hover:bg-gray-50"
+                status_badge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Included</span>'
+            else:
+                row_class = "bg-gray-50 text-gray-400"
+                status_badge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Skipped</span>'
+
             rows += f"""
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{i+1}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{start:.2f}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{end:.2f}s</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{duration:.2f}s</td>
+            <tr class="{row_class}">
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{i + 1}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{clip.start:.2f}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{clip.end:.2f}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{duration:.2f}s</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">{status_badge}</td>
             </tr>
             """
-            
+
         return f"""
         <div class="overflow-x-auto border rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
@@ -347,6 +369,7 @@ async def get_clips(
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">

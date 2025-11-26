@@ -68,7 +68,14 @@ def main(input_video, csv_file, game, padding, output_dir, dry_run):
     output_path.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output directory: {output_path.absolute()}")
 
-    for player, intervals in player_clips.items():
+    for player, clips in player_clips.items():
+        # Filter included clips and extract intervals
+        intervals = [(c.start, c.end) for c in clips if c.included]
+
+        if not intervals:
+            logger.info(f"Skipping {player} (no included clips)")
+            continue
+
         merged = merge_intervals(intervals, padding)
         total_duration = sum(end - start for start, end in merged)
         clip_count = len(merged)

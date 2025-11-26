@@ -66,9 +66,9 @@ def test_end_to_end_workflow(setup_media):
     # Video is 30s long.
     # Clip 1: 00:00:05 - 00:00:10 (5s)
     # Clip 2: 00:00:20 - 00:00:25 (5s)
-    csv_content = """videoName,startTime,stopTime,playerName,notes
-TestGame,00:00:05,00:00:10,TestPlayer,note1
-TestGame,00:00:20,00:00:25,TestPlayer,note2
+    csv_content = """videoName,startTime,stopTime,playerName,notes,include
+TestGame,00:00:05,00:00:10,TestPlayer,note1,TRUE
+TestGame,00:00:20,00:00:25,TestPlayer,note2,TRUE
 """
     with open(TEST_CSV, "w") as f:
         f.write(csv_content)

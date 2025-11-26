@@ -14,12 +14,10 @@ When writing new code or modifying existing code, you **MUST** always perform th
     *   Update `docs/` files if features change.
     *   Update `README.md` if high-level info changes.
     *   Update `docs/CHANGELOG.md` with a new entry for significant changes.
-4.  **Summarize**: Update `ai/session_summary.md` with a log of your actions.
-    *   **IMPORTANT**: **APPEND** a new session entry - DO NOT overwrite existing content!
-    *   The session summary is a cumulative history of all sessions.
-    *   Add a new section like "## Session N - YYYY-MM-DD" at the end of the file.
+4.  **Summarize**: Create a new session summary file.
+    *   Create a new file in `ai/session_summaries/` named `YYYY-MM-DD_session_N.md`.
     *   Describe what was done, why, and the outcome.
-    *   Preserve all previous session history.
+    *   Do NOT modify `ai/session_summary.md` (it is for historical context only).
 
 ## Directory Structure
 -   `ai/`: Contains AI context, summaries, and these instructions.

@@ -10,11 +10,14 @@ Instead of maintaining a local CSV file, you can use a Google Sheets spreadsheet
 
 Your sheet should have the same format as the CSV file:
 
-| videoName | startTime | stopTime | playerName |
-|-----------|-----------|----------|------------|
-| Game1     | 00:01:00  | 00:01:15 | Alice      |
-| Game1     | 00:05:30  | 00:05:45 | Alice      |
-| Game1     | 00:02:00  | 00:02:10 | Bob        |
+| videoName | startTime | stopTime | playerName | include | notes |
+|-----------|-----------|----------|------------|---------|-------|
+| Game1     | 00:01:00  | 00:01:15 | Alice      | TRUE    | Nice play |
+| Game1     | 00:05:30  | 00:05:45 | Alice      | FALSE   | Skipped |
+| Game1     | 00:02:00  | 00:02:10 | Bob        |         | Defaults to TRUE |
+
+*   **include**: (Optional) Set to `FALSE` to skip this clip. Blanks or `TRUE` are included.
+*   **notes**: (Optional) Any notes about the clip.
 
 ### 2. Share the Sheet
 

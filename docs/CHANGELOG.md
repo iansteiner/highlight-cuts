@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     -   `docs/TROUBLESHOOTING.md`: Comprehensive troubleshooting guide
     -   `docs/architecture.md`: Technical design and architecture documentation
     -   `docs/FAQ.md`: Frequently asked questions
+-   **Status Polling**: Added real-time progress indicator with status polling for web interface.
+-   **Test Coverage**: Added comprehensive tests for background task parameter validation and status check endpoint.
+
+### Fixed
+-   **Critical Bug**: Fixed missing `game` parameter in background task invocation that caused processing to fail silently.
+-   **Progress Indicator**: Restored progress indicator that was accidentally disabled, now shows "Processing highlights..." with animated spinner.
+-   **Status Updates**: Fixed status check polling to properly show completion message and stop polling when processing finishes.
 
 ### Enhanced
 -   **Documentation**: Improved project documentation robustness (CONTRIBUTING, SECURITY, etc.).
@@ -30,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     -   `README.md`: Added badges, system requirements, installation instructions, and use cases
     -   `docs/usage.md`: Added detailed installation steps, common workflows, and best practices
     -   `docs/background.md`: Added limitations, comparisons, and technical background sections
+-   **Test Coverage**: Improved test coverage from 26% to 64% with focused tests on critical web endpoints.
 
 ## [0.1.0] - 2025-11-23
 

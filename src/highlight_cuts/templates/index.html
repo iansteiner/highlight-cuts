@@ -12,6 +12,16 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+
+        /* HTMX loading indicator - hidden by default, shown when request is in flight */
+        .htmx-indicator {
+            display: none;
+        }
+
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator {
+            display: block;
+        }
     </style>
 </head>
 
@@ -101,46 +111,99 @@
 
                             function updateTournaments() {
                                 const team = teamSelect.value;
+                                localStorage.setItem('selected-team', team);
+                                localStorage.removeItem('selected-tournament');
+                                localStorage.removeItem('selected-game');
+
                                 tournamentSelect.innerHTML = '<option value="" disabled selected>Select Tournament</option>';
                                 gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
+                                tournamentSelect.disabled = true;
                                 gameSelect.disabled = true;
-                                videoInput.value = "";
+                                videoInput.value = '';
 
                                 if (team && videoStructure[team]) {
-                                    tournamentSelect.disabled = false;
                                     for (const tournament in videoStructure[team]) {
                                         const option = document.createElement('option');
                                         option.value = tournament;
                                         option.textContent = tournament;
                                         tournamentSelect.appendChild(option);
                                     }
-                                } else {
-                                    tournamentSelect.disabled = true;
+                                    tournamentSelect.disabled = false;
                                 }
                             }
 
                             function updateGames() {
                                 const team = teamSelect.value;
                                 const tournament = tournamentSelect.value;
+                                localStorage.setItem('selected-tournament', tournament);
+                                localStorage.removeItem('selected-game');
+
                                 gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
-                                videoInput.value = "";
+                                gameSelect.disabled = true;
+                                videoInput.value = '';
 
                                 if (team && tournament && videoStructure[team][tournament]) {
-                                    gameSelect.disabled = false;
                                     videoStructure[team][tournament].forEach(game => {
                                         const option = document.createElement('option');
                                         option.value = game.path; // Store the relative path as value
                                         option.textContent = game.name;
                                         gameSelect.appendChild(option);
                                     });
-                                } else {
-                                    gameSelect.disabled = true;
+                                    gameSelect.disabled = false;
                                 }
                             }
 
                             function updateVideoPath() {
-                                videoInput.value = gameSelect.value;
+                                const team = teamSelect.value;
+                                const tournament = tournamentSelect.value;
+                                const gamePath = gameSelect.value; // This is the full relative path
+                                localStorage.setItem('selected-game', gamePath);
+
+                                videoInput.value = gamePath; // The input already expects the full path
                             }
+
+                            // Restore selections from localStorage on page load
+                            window.addEventListener('DOMContentLoaded', () => {
+                                const savedTeam = localStorage.getItem('selected-team');
+                                const savedTournament = localStorage.getItem('selected-tournament');
+                                const savedGame = localStorage.getItem('selected-game');
+
+                                if (savedTeam && videoStructure[savedTeam]) {
+                                    teamSelect.value = savedTeam;
+                                    updateTournaments(); // Populate tournaments based on saved team
+
+                                    if (savedTournament && videoStructure[savedTeam][savedTournament]) {
+                                        // Use setTimeout to ensure DOM updates from updateTournaments have rendered
+                                        setTimeout(() => {
+                                            tournamentSelect.value = savedTournament;
+                                            updateGames(); // Populate games based on saved tournament
+
+                                            if (savedGame) {
+                                                // Check if the saved game path exists in the current game options
+                                                const gameExists = Array.from(gameSelect.options).some(option => option.value === savedGame);
+                                                if (gameExists) {
+                                                    setTimeout(() => {
+                                                        gameSelect.value = savedGame;
+                                                        updateVideoPath(); // Set the hidden input
+                                                    }, 0);
+                                                } else {
+                                                    // If saved game doesn't exist, clear it from storage
+                                                    localStorage.removeItem('selected-game');
+                                                }
+                                            }
+                                        }, 0);
+                                    } else {
+                                        // If saved tournament doesn't exist, clear it and subsequent selections
+                                        localStorage.removeItem('selected-tournament');
+                                        localStorage.removeItem('selected-game');
+                                    }
+                                } else {
+                                    // If saved team doesn't exist, clear all selections
+                                    localStorage.removeItem('selected-team');
+                                    localStorage.removeItem('selected-tournament');
+                                    localStorage.removeItem('selected-game');
+                                }
+                            });
                         </script>
                     </div>
 
@@ -218,6 +281,29 @@
                         </div>
                     </div>
                 </form>
+
+                <!--
+                Debug Log Card (commented out for production use)
+                <div class="mt-8 bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-800 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                            FFmpeg Debug Log
+                        </h3>
+                        <button hx-get="/debug-log" hx-target="#debug-log-content"
+                            class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded border border-gray-700 transition">
+                            Refresh Log
+                        </button>
+                    </div>
+                    <div id="debug-log-content" hx-get="/debug-log" hx-trigger="load, every 5s" class="min-h-[100px]">
+                        <div class="text-gray-500 italic text-sm">Waiting for logs...</div>
+                    </div>
+                </div>
+                -->
 
                 <!-- Result Area -->
                 <div id="result-area" class="mt-6"></div>

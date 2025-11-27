@@ -6,7 +6,7 @@ from typing import List
 logger = logging.getLogger(__name__)
 
 
-def extract_clip(input_path: str, start: float, end: float, output_path: str) -> None:
+def extract_clip(input_path: str, start: float, end: float, output_path: str) -> dict:
     """
     Extracts a clip from the input video using stream copy.
 
@@ -35,13 +35,18 @@ def extract_clip(input_path: str, start: float, end: float, output_path: str) ->
 
     logger.debug(f"Running command: {' '.join(cmd)}")
     try:
-        subprocess.run(cmd, check=True, capture_output=True)
+        result = subprocess.run(cmd, check=True, capture_output=True)
+        return {
+            "command": " ".join(cmd),
+            "stdout": result.stdout.decode(),
+            "stderr": result.stderr.decode(),
+        }
     except subprocess.CalledProcessError as e:
         logger.error(f"FFmpeg failed: {e.stderr.decode()}")
         raise
 
 
-def concat_clips(clip_paths: List[str], output_path: str) -> None:
+def concat_clips(clip_paths: List[str], output_path: str) -> dict:
     """
     Concatenates multiple clips into a single video file.
 
@@ -75,7 +80,12 @@ def concat_clips(clip_paths: List[str], output_path: str) -> None:
 
     logger.debug(f"Running concat command: {' '.join(cmd)}")
     try:
-        subprocess.run(cmd, check=True, capture_output=True)
+        result = subprocess.run(cmd, check=True, capture_output=True)
+        return {
+            "command": " ".join(cmd),
+            "stdout": result.stdout.decode(),
+            "stderr": result.stderr.decode(),
+        }
     except subprocess.CalledProcessError as e:
         logger.error(f"FFmpeg concat failed: {e.stderr.decode()}")
         raise

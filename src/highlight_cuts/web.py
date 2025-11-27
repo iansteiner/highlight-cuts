@@ -1,8 +1,10 @@
 import logging
 import os
 import tempfile
+from datetime import datetime
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict
+import glob
 
 from fastapi import FastAPI, Request, Form, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
@@ -54,48 +56,44 @@ def get_video_structure() -> Dict:
     """
     extensions = {".mp4", ".mov", ".mkv", ".avi", ".ts"}
     structure = {}
-    
+
     if DATA_DIR.exists():
         for f in DATA_DIR.rglob("*"):
             if f.is_file() and f.suffix.lower() in extensions:
                 rel_path = f.relative_to(DATA_DIR)
                 parts = rel_path.parts
-                
+
                 # Expected: team/tournament/game.mp4
                 if len(parts) >= 3:
                     team = parts[0]
                     tournament = parts[1]
-                    game_file = parts[-1]
-                    # Use the file stem as the game name for display, or the full filename?
-                    # User said "game.mp4", so display "game"
+                    # Use the file stem as the game name for display
                     game_name = f.stem
-                    
+
                     if team not in structure:
                         structure[team] = {}
                     if tournament not in structure[team]:
                         structure[team][tournament] = []
-                        
-                    structure[team][tournament].append({
-                        "name": game_name,
-                        "path": str(rel_path)
-                    })
+
+                    structure[team][tournament].append(
+                        {"name": game_name, "path": str(rel_path)}
+                    )
                 else:
                     # Handle files not in expected structure (e.g. root or 1 level deep)
                     # Put them in "Uncategorized" -> "Misc"
                     team = "Uncategorized"
                     tournament = "Misc"
                     game_name = f.stem
-                    
+
                     if team not in structure:
                         structure[team] = {}
                     if tournament not in structure[team]:
                         structure[team][tournament] = []
-                        
-                    structure[team][tournament].append({
-                        "name": game_name,
-                        "path": str(rel_path)
-                    })
-                    
+
+                    structure[team][tournament].append(
+                        {"name": game_name, "path": str(rel_path)}
+                    )
+
     # Sort keys
     sorted_structure = {}
     for team in sorted(structure.keys()):
@@ -105,7 +103,7 @@ def get_video_structure() -> Dict:
             sorted_structure[team][tournament] = sorted(
                 structure[team][tournament], key=lambda x: x["name"]
             )
-            
+
     return sorted_structure
 
 
@@ -150,8 +148,10 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
         # Group by game and player and count clips
         # We can also check for 'include' column to count only included clips?
         # For now, let's count all clips to match the "clip_count" requirement.
-        summary = df.groupby(["videoName", "playerName"]).size().reset_index(name="count")
-        
+        summary = (
+            df.groupby(["videoName", "playerName"]).size().reset_index(name="count")
+        )
+
         # Sort by Game then Player
         summary = summary.sort_values(["videoName", "playerName"])
 
@@ -160,7 +160,7 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
             game = row["videoName"]
             player = row["playerName"]
             count = row["count"]
-            
+
             rows += f"""
             <tr onclick="selectSelection(this, '{game}', '{player}')"
                 hx-post="/get-clips"
@@ -214,6 +214,20 @@ def process_video_task(
         input_path = DATA_DIR / video_filename
         output_path = OUTPUT_DIR / output_filename
 
+        # Delete old versions of this file (keep only the newest generation)
+        output_dir = output_path.parent
+        base_pattern = output_path.stem.rsplit("_", 2)[
+            0
+        ]  # Remove timestamp from pattern
+        pattern = str(output_dir / f"{base_pattern}_*.mp4")
+        old_files = glob.glob(pattern)
+        for old_file in old_files:
+            try:
+                os.remove(old_file)
+                logger.info(f"Deleted old version: {old_file}")
+            except Exception as e:
+                logger.warning(f"Could not delete {old_file}: {e}")
+
         # 1. Get clips
         player_clips = process_csv(sheet_url, game)
 
@@ -234,16 +248,52 @@ def process_video_task(
         merged = merge_intervals(intervals)
 
         # 2. Extract and Concat
+        debug_logs = []
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_clips = []
             for i, (start, end) in enumerate(merged):
                 clip_name = f"clip_{i:03d}{input_path.suffix}"
                 clip_path = os.path.join(temp_dir, clip_name)
-                extract_clip(str(input_path), start, end, clip_path)
+                logger.info(f"Extracting clip {i}: start={start}, end={end}")
+
+                result = extract_clip(str(input_path), start, end, clip_path)
+                result["type"] = "extract"
+                result["clip_index"] = i
+                result["start"] = start
+                result["end"] = end
+                debug_logs.append(result)
+
                 temp_clips.append(clip_path)
 
-            concat_clips(temp_clips, str(output_path))
+            result = concat_clips(temp_clips, str(output_path))
+            if result:
+                result["type"] = "concat"
+                debug_logs.append(result)
+
             logger.info(f"Created {output_path}")
+
+        # Write completion flag
+        completion_file = Path("/tmp/highlight_cuts_complete.flag")
+        with open(completion_file, "w") as f:
+            f.write(f"{player}|{game}|{datetime.now().isoformat()}")
+
+        # Write debug log to /tmp (not in output directory)
+        log_file = Path("/tmp/highlight_cuts_debug.txt")
+        with open(log_file, "w") as f:
+            f.write(f"Debug Log generated at {datetime.now()}\n")
+            f.write(f"Video: {video_filename}\n")
+            f.write(f"Sheet: {sheet_url}\n")
+            f.write(f"Game: {game}, Player: {player}\n")
+            f.write("-" * 80 + "\n\n")
+
+            for entry in debug_logs:
+                f.write(f"[{entry['type'].upper()}] {entry.get('clip_index', '')}\n")
+                f.write(f"Command: {entry['command']}\n")
+                if "start" in entry:
+                    f.write(f"Time: {entry['start']} -> {entry['end']}\n")
+                f.write(f"Stdout: {entry['stdout']}\n")
+                f.write(f"Stderr: {entry['stderr']}\n")
+                f.write("-" * 80 + "\n\n")
 
     except Exception as e:
         logger.error(f"Processing failed: {e}")
@@ -264,7 +314,7 @@ async def process(
     # Generate output filename
     # Format: player_team_tournament_game.mp4
     input_path = DATA_DIR / video_filename
-    
+
     # Parse parts from video_filename (relative path)
     # Expected: team/tournament/game.mp4
     parts = Path(video_filename).parts
@@ -283,11 +333,23 @@ async def process(
         .strip()
         .replace(" ", "_")
     )
-    
+
     # Sanitize other parts
-    safe_team = "".join(c for c in team if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
-    safe_tournament = "".join(c for c in tournament if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
-    safe_game = "".join(c for c in game_name if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
+    safe_team = (
+        "".join(c for c in team if c.isalnum() or c in (" ", "_", "-"))
+        .strip()
+        .replace(" ", "_")
+    )
+    safe_tournament = (
+        "".join(c for c in tournament if c.isalnum() or c in (" ", "_", "-"))
+        .strip()
+        .replace(" ", "_")
+    )
+    safe_game = (
+        "".join(c for c in game_name if c.isalnum() or c in (" ", "_", "-"))
+        .strip()
+        .replace(" ", "_")
+    )
 
     # Create player_team directory
     # Format: player_team
@@ -296,8 +358,9 @@ async def process(
     player_dir.mkdir(parents=True, exist_ok=True)
 
     # Output filename: tournament_game.ext
-    # Format: tournament_game.mp4
-    output_filename = f"{safe_tournament}_{safe_game}{input_path.suffix}"
+    # Output filename: tournament_game_timestamp.ext
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f"{safe_tournament}_{safe_game}_{timestamp}{input_path.suffix}"
 
     # Run in background
     background_tasks.add_task(
@@ -309,16 +372,16 @@ async def process(
         str(player_team_dir_name + "/" + output_filename),  # Pass relative path
     )
 
-    # Return a "Processing started" message with a polling trigger or download link
-    # Since we don't have a DB, we can't easily poll status.
-    # For this prototype, we'll just say "Processing started. Check back in a minute."
-    # and list the file in a "Recent Files" section (which we can implement via polling).
-
-    return f"""
-    <div class="p-4 bg-blue-100 text-blue-800 rounded">
-        Processing <strong>{player}</strong> in <strong>{game}</strong>...<br>
-        Output will be: {player_team_dir_name}/{output_filename}<br>
-        <button hx-get="/files" hx-target="#file-list" class="mt-2 underline">Refresh File List</button>
+    # Return status indicator that triggers polling
+    return """
+    <div hx-get="/status-check" hx-trigger="load" hx-swap="outerHTML">
+        <div class="flex items-center justify-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <svg class="animate-spin h-5 w-5 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-blue-700 font-medium">Processing highlights...</span>
+        </div>
     </div>
     """
 
@@ -328,17 +391,36 @@ async def list_files():
     """Returns a list of generated files in the output directory."""
     files = []
     if OUTPUT_DIR.exists():
-        # Find all video files recursively
-        for f in OUTPUT_DIR.rglob("*"):
+        # Find all video files recursively (filter for .mp4)
+        for f in OUTPUT_DIR.rglob("*.mp4"):
             if f.is_file() and not f.name.startswith("."):
                 files.append(f)
         # Sort by modification time, newest first
         files = sorted(files, key=os.path.getmtime, reverse=True)
 
+    def time_ago(timestamp):
+        """Format timestamp as human-readable time ago."""
+        from datetime import datetime, timedelta
+
+        diff = datetime.now() - datetime.fromtimestamp(timestamp)
+        if diff < timedelta(minutes=1):
+            return "Just now"
+        elif diff < timedelta(hours=1):
+            mins = int(diff.total_seconds() / 60)
+            return f"{mins} minute{'s' if mins != 1 else ''} ago"
+        elif diff < timedelta(days=1):
+            hours = int(diff.total_seconds() / 3600)
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        else:
+            days = diff.days
+            return f"{days} day{'s' if days != 1 else ''} ago"
+
     html = "<ul class='divide-y divide-gray-100 bg-white rounded-md border border-gray-200 shadow-sm'>"
     for f in files:
         # Determine relative path and display info
         rel_path = f.relative_to(OUTPUT_DIR)
+        mtime = os.path.getmtime(f)
+        time_str = time_ago(mtime)
 
         # If in a subdirectory, use that as Player Name
         if len(rel_path.parts) > 1:
@@ -358,6 +440,7 @@ async def list_files():
                 <div class="min-w-0">
                     <p class="text-sm font-bold text-gray-900 truncate">{player_name}</p>
                     <p class="text-xs text-gray-500 truncate" title="{display_name}">{display_name}</p>
+                    <p class="text-xs text-gray-400 italic">{time_str}</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
@@ -410,7 +493,17 @@ async def download_file(file_path: str):
     full_path = OUTPUT_DIR / file_path
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(full_path, filename=Path(file_path).name)
+
+    # Remove timestamp from download filename for cleaner user experience
+    # File on disk: tournament_game_20251126_152800.mp4
+    # Download as: tournament_game.mp4
+    original_name = Path(file_path).name
+    # Remove timestamp pattern _YYYYMMDD_HHMMSS before extension
+    import re
+
+    clean_name = re.sub(r"_\d{8}_\d{6}(\.[^.]+)$", r"\1", original_name)
+
+    return FileResponse(full_path, filename=clean_name)
 
 
 def format_seconds(seconds: float) -> str:
@@ -440,13 +533,15 @@ async def get_clips(
         # Create table rows
         rows = ""
         for clip in clips:
-            bg_class = "bg-red-50 text-red-800" if not clip.included else "hover:bg-gray-50"
+            bg_class = (
+                "bg-red-50 text-red-800" if not clip.included else "hover:bg-gray-50"
+            )
             opacity_class = "opacity-50" if not clip.included else ""
-            
+
             # Format timestamps
             start_str = format_seconds(clip.start)
             end_str = format_seconds(clip.end)
-            
+
             rows += f"""
             <tr class="border-b {bg_class} {opacity_class} transition-colors">
                 <td class="py-1 px-4 font-mono text-sm">{start_str}</td>
@@ -475,3 +570,45 @@ async def get_clips(
         logger.error(f"Error getting clips: {e}")
         return f"<div class='text-red-600'>Error loading clips: {str(e)}</div>"
 
+
+@app.get("/debug-log", response_class=HTMLResponse)
+async def get_debug_log():
+    """Returns the content of the debug log."""
+    log_file = Path("/tmp/highlight_cuts_debug.txt")
+    if not log_file.exists():
+        return "<div class='text-gray-500 italic'>No debug log available yet.</div>"
+
+    content = log_file.read_text()
+    return f"<pre class='text-xs font-mono bg-gray-900 text-green-400 p-4 rounded overflow-x-auto whitespace-pre-wrap'>{content}</pre>"
+
+
+@app.get("/status-check", response_class=HTMLResponse)
+async def check_status():
+    """Check if processing is complete and return appropriate status message."""
+    completion_file = Path("/tmp/highlight_cuts_complete.flag")
+    if completion_file.exists():
+        content = completion_file.read_text()
+        player, game, timestamp = content.split("|")
+        # Delete the flag file so it doesn't show up again
+        completion_file.unlink()
+        # Return Done message WITHOUT polling trigger (stops the polling)
+        return f"""
+        <div class="flex items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200">
+            <svg class="h-5 w-5 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-green-700 font-medium">✓ Done! Highlights for {player} completed.</span>
+        </div>
+        """
+    # Return div with polling trigger to keep checking (wraps content to maintain structure)
+    return """
+    <div hx-get="/status-check" hx-trigger="load delay:2s" hx-swap="outerHTML">
+        <div class="flex items-center justify-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <svg class="animate-spin h-5 w-5 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-blue-700 font-medium">Processing highlights...</span>
+        </div>
+    </div>
+    """

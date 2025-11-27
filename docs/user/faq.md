@@ -33,7 +33,7 @@ Highlight Cuts is **completely free** and open-source. There are no subscription
 2. **FFmpeg** (video processing software)
 3. **highlight-cuts** (this tool)
 
-See the [Usage Guide](usage.md) for detailed installation instructions.
+See the [Quick Start Guide](quickstart.md) or [CLI Usage Guide](usage.md) for detailed installation instructions.
 
 ### Do I need a powerful computer?
 
@@ -279,7 +279,7 @@ FFmpeg is not installed or not in your system PATH.
 - **Ubuntu/Debian**: `sudo apt install ffmpeg`
 - **Windows**: Download from [ffmpeg.org](https://ffmpeg.org/download.html)
 
-See [Troubleshooting Guide](TROUBLESHOOTING.md#ffmpeg-not-found) for details.
+See [Troubleshooting Guide](troubleshooting.md#ffmpeg-not-found) for details.
 
 ### "No clips found for game 'GameName'"
 
@@ -313,7 +313,7 @@ See [Google Sheets Guide](google_sheets.md#troubleshooting) for more help.
 - Try converting to MP4 with H.264
 - Re-run the command
 
-See [Troubleshooting Guide](TROUBLESHOOTING.md) for comprehensive solutions.
+See [Troubleshooting Guide](troubleshooting.md) for comprehensive solutions.
 
 ---
 
@@ -359,7 +359,7 @@ If you use Google Sheets URLs:
 - Don't include sensitive information in shared sheets
 - Use local CSV files for private data
 
-See [SECURITY.md](../SECURITY.md) for more details.
+See [SECURITY.md](../../SECURITY.md) for more details.
 
 ---
 
@@ -383,7 +383,7 @@ Open a [GitHub issue](https://github.com/yourusername/highlight-cuts/issues) wit
 
 ### Can I contribute code?
 
-**Yes!** Contributions are welcome. See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+**Yes!** Contributions are welcome. See [Contributing Guide](../dev/contributing.md) for guidelines.
 
 ### Where can I get help?
 

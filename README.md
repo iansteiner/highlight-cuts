@@ -59,21 +59,25 @@ uv run highlight-cuts --input-video game.mp4 --csv-file clips.csv --game Game1
 
 ## Documentation
 
-### Getting Started
-- 📖- [Web Interface](docs/web_interface.md): Run the tool in a browser using Docker.
-- [Usage Guide](docs/usage.md): Detailed instructions for the CLI.basic usage
-- 📊 [Google Sheets Guide](docs/google_sheets.md) - Using Google Sheets instead of CSV files
-- ❓ [FAQ](docs/FAQ.md) - Frequently asked questions
+### For Users
+- 🚀 [Quick Start Guide](docs/user/quickstart.md) - Get started in 5 minutes with Docker
+- 💻 [CLI Usage Guide](docs/user/usage.md) - Command-line interface documentation
+- 🌐 [Web Interface](docs/user/web_interface.md) - Run the tool in a browser
+- 🐳 [Docker Setup](docs/user/docker.md) - Docker deployment guide
+- 📊 [Google Sheets Guide](docs/user/google_sheets.md) - Using Google Sheets instead of CSV files
+- ❓ [FAQ](docs/user/faq.md) - Frequently asked questions
+- 🔧 [Troubleshooting](docs/user/troubleshooting.md) - Common issues and solutions
 
-### Technical Documentation
-- 🏗️ [Architecture & Design](docs/architecture.md) - Technical design and implementation details
-- 📝 [Background](docs/background.md) - Why this tool exists and how it works
-- 🔧 [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+### For Developers
+- 🏗️ [Architecture & Design](docs/dev/architecture.md) - Technical design and implementation details
+- 📝 [Background](docs/dev/background.md) - Why this tool exists and how it works
+- 🛠️ [Tech Stack](docs/dev/tech_stack.md) - Technology choices and rationale
+- 🧪 [Testing Guide](docs/dev/testing.md) - Testing infrastructure and strategies
+- 🤝 [Contributing Guide](docs/dev/contributing.md) - How to contribute to the project
 
-### Contributing
-- 🤝 [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
-- 🔒 [Security Policy](SECURITY.md) - Security considerations and reporting
+### Project Info
 - 📋 [Changelog](docs/CHANGELOG.md) - Version history and changes
+- 🔒 [Security Policy](SECURITY.md) - Security considerations and reporting
 
 ## Example Workflow
 

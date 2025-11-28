@@ -225,9 +225,9 @@ async def read_root(request: Request):
     video_structure = get_video_structure()
     cached_sheets = read_cache(OUTPUT_DIR)
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "video_structure": video_structure,
             "cached_sheets": cached_sheets,
         },

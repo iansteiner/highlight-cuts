@@ -29,6 +29,9 @@ packages = ["src/highlight_cuts"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "--cov=src --cov-report=term-missing"
+markers = [
+    "integration: marks tests that require integration resources (deselect with '-m \"not integration\"')",
+]
 
 [dependency-groups]
 dev = [

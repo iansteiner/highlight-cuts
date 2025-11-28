@@ -215,10 +215,15 @@
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Google Sheet URL</label>
                             <div class="flex gap-2">
-                                <input type="text" name="sheet_url"
+                                <input type="text" name="sheet_url" list="cached-sheets"
                                     class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
                                     placeholder="https://docs.google.com/spreadsheets/..." hx-post="/parse-sheet"
                                     hx-trigger="change" hx-target="#sheet-status" required>
+                                <datalist id="cached-sheets">
+                                    {% for sheet in cached_sheets %}
+                                    <option value="{{ sheet.original_url }}" label="{{ sheet.sheet_name }}">{{ sheet.sheet_name }}</option>
+                                    {% endfor %}
+                                </datalist>
                                 <button type="button" hx-post="/parse-sheet" hx-include="[name='sheet_url']"
                                     hx-target="#sheet-status"
                                     class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition flex items-center gap-2 shadow-sm font-medium">
@@ -230,6 +235,15 @@
                                 </button>
                             </div>
                             <div id="sheet-status" class="text-sm mt-2 min-h-[1.5rem]"></div>
+                            {% if cached_sheets %}
+                            <p class="text-xs text-gray-500 mt-2 flex items-center">
+                                <svg class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Click the input to see {{ cached_sheets|length }} recent sheet(s)
+                            </p>
+                            {% endif %}
                         </div>
 
                         <!-- Game/Player Selection -->

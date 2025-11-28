@@ -44,7 +44,10 @@ class TestNoCacheStaticFiles:
                 response = static_files.file_response("test.mp4")
 
                 # Verify no-cache headers are set
-                assert response.headers["Cache-Control"] == "no-cache, no-store, must-revalidate"
+                assert (
+                    response.headers["Cache-Control"]
+                    == "no-cache, no-store, must-revalidate"
+                )
                 assert response.headers["Pragma"] == "no-cache"
                 assert response.headers["Expires"] == "0"
 
@@ -286,7 +289,11 @@ class TestProcessVideoTask:
                     (Path(tmpdir) / "game.mp4").touch()
 
                     # Create old output files that should be deleted
-                    old_file1 = Path(tmpdir) / "Player1_TeamA" / "Tournament_Game_20250101_120000.mp4"
+                    old_file1 = (
+                        Path(tmpdir)
+                        / "Player1_TeamA"
+                        / "Tournament_Game_20250101_120000.mp4"
+                    )
                     old_file1.parent.mkdir(parents=True, exist_ok=True)
                     old_file1.touch()
 
@@ -298,8 +305,16 @@ class TestProcessVideoTask:
                     }
 
                     # Mock extract and concat
-                    mock_extract.return_value = {"command": "cmd", "stdout": "", "stderr": ""}
-                    mock_concat.return_value = {"command": "cmd", "stdout": "", "stderr": ""}
+                    mock_extract.return_value = {
+                        "command": "cmd",
+                        "stdout": "",
+                        "stderr": "",
+                    }
+                    mock_concat.return_value = {
+                        "command": "cmd",
+                        "stdout": "",
+                        "stderr": "",
+                    }
 
                     # Run the task
                     process_video_task(
@@ -340,8 +355,16 @@ class TestProcessVideoTask:
                     }
 
                     # Mock extract and concat
-                    mock_extract.return_value = {"command": "cmd", "stdout": "", "stderr": ""}
-                    mock_concat.return_value = {"command": "cmd", "stdout": "", "stderr": ""}
+                    mock_extract.return_value = {
+                        "command": "cmd",
+                        "stdout": "",
+                        "stderr": "",
+                    }
+                    mock_concat.return_value = {
+                        "command": "cmd",
+                        "stdout": "",
+                        "stderr": "",
+                    }
 
                     # Should not raise exception, just log warning
                     process_video_task(
@@ -419,8 +442,16 @@ class TestProcessVideoTask:
                         "Player1": [Clip(start=0.0, end=10.0, included=True)]
                     }
                     mock_merge.return_value = [(0.0, 10.0)]
-                    mock_extract.return_value = {"command": "cmd", "stdout": "", "stderr": ""}
-                    mock_concat.return_value = {"command": "cmd", "stdout": "", "stderr": ""}
+                    mock_extract.return_value = {
+                        "command": "cmd",
+                        "stdout": "",
+                        "stderr": "",
+                    }
+                    mock_concat.return_value = {
+                        "command": "cmd",
+                        "stdout": "",
+                        "stderr": "",
+                    }
 
                     process_video_task(
                         "game.mp4",
@@ -794,7 +825,9 @@ class TestDebugLogEndpoint:
             with patch("highlight_cuts.web.Path") as mock_path:
                 mock_log_file = MagicMock()
                 mock_log_file.exists.return_value = True
-                mock_log_file.read_text.return_value = "Debug information\nLine 2\nLine 3"
+                mock_log_file.read_text.return_value = (
+                    "Debug information\nLine 2\nLine 3"
+                )
                 mock_path.return_value = mock_log_file
 
                 response = client.get("/debug-log")
@@ -886,7 +919,9 @@ Game1,Player2,00:05,00:15,true,Good defense"""
 
             # Then try with valid sheet
             mock_response = MagicMock()
-            mock_response.text = "videoName,playerName,startTime,stopTime\nGame1,Player1,00:00,00:10"
+            mock_response.text = (
+                "videoName,playerName,startTime,stopTime\nGame1,Player1,00:00,00:10"
+            )
             mock_get.side_effect = None
             mock_get.return_value = mock_response
 

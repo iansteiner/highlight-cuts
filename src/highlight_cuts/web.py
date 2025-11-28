@@ -14,6 +14,7 @@ import pandas as pd
 
 from .core import process_csv, merge_intervals
 from .ffmpeg import extract_clip, concat_clips
+from .cache import read_cache, append_to_cache
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -110,9 +111,30 @@ def get_video_structure() -> Dict:
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     video_structure = get_video_structure()
+    cached_sheets = read_cache(OUTPUT_DIR)
     return templates.TemplateResponse(
-        "index.html", {"request": request, "video_structure": video_structure}
+        "index.html",
+        {
+            "request": request,
+            "video_structure": video_structure,
+            "cached_sheets": cached_sheets,
+        },
     )
+
+
+@app.get("/cached-sheets")
+async def get_cached_sheets():
+    """Returns JSON list of cached Google Sheets URLs."""
+    cached = read_cache(OUTPUT_DIR)
+    return [
+        {
+            "url": entry["original_url"],
+            "name": entry["sheet_name"],
+            "sheet_id": entry["sheet_id"],
+            "gid": entry["gid"],
+        }
+        for entry in cached
+    ]
 
 
 @app.post("/parse-sheet", response_class=HTMLResponse)
@@ -173,6 +195,10 @@ async def parse_sheet(request: Request, sheet_url: str = Form(...)):
                 <td class="px-6 py-1 whitespace-nowrap text-sm text-gray-500">{count}</td>
             </tr>
             """
+
+        # Add to cache with document title (async, don't wait for it)
+        # This happens on successful parse, so user gets immediate feedback
+        append_to_cache(OUTPUT_DIR, sheet_url, sheet_name=None)
 
         table_html = f"""
         <div id="selection-table-container" hx-swap-oob="true" class="mt-4 col-span-2">

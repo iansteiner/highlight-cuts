@@ -119,3 +119,94 @@ def test_status_check_complete(mock_path):
     assert 'hx-trigger="load delay:2s"' not in response.text
     # Verify completion file was deleted
     mock_completion_file.unlink.assert_called_once()
+
+
+@patch("highlight_cuts.web.read_cache")
+def test_cached_sheets_endpoint_empty(mock_read_cache):
+    """Test /cached-sheets endpoint with no cached entries."""
+    mock_read_cache.return_value = []
+
+    response = client.get("/cached-sheets")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@patch("highlight_cuts.web.read_cache")
+def test_cached_sheets_endpoint_with_entries(mock_read_cache):
+    """Test /cached-sheets endpoint with cached entries."""
+    mock_read_cache.return_value = [
+        {
+            "timestamp": 1234567890,
+            "sheet_id": "sheet1",
+            "gid": "0",
+            "original_url": "https://docs.google.com/spreadsheets/d/sheet1/edit",
+            "sheet_name": "Game 1",
+        },
+        {
+            "timestamp": 1234567891,
+            "sheet_id": "sheet2",
+            "gid": "5",
+            "original_url": "https://docs.google.com/spreadsheets/d/sheet2/edit#gid=5",
+            "sheet_name": "Game 2",
+        },
+    ]
+
+    response = client.get("/cached-sheets")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["url"] == "https://docs.google.com/spreadsheets/d/sheet1/edit"
+    assert data[0]["name"] == "Game 1"
+    assert data[0]["sheet_id"] == "sheet1"
+    assert data[0]["gid"] == "0"
+
+
+@patch("highlight_cuts.web.get_video_structure")
+@patch("highlight_cuts.web.read_cache")
+def test_root_with_cached_sheets(mock_read_cache, mock_get_structure):
+    """Test that root page includes cached sheets in template context."""
+    mock_get_structure.return_value = {}
+    mock_read_cache.return_value = [
+        {
+            "timestamp": 1234567890,
+            "sheet_id": "test",
+            "gid": "0",
+            "original_url": "https://docs.google.com/spreadsheets/d/test/edit",
+            "sheet_name": "Test Game",
+        }
+    ]
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    # Check that datalist is present
+    assert 'id="cached-sheets"' in response.text
+    # Check that option is present
+    assert "Test Game" in response.text
+    assert "https://docs.google.com/spreadsheets/d/test/edit" in response.text
+
+
+@patch("highlight_cuts.web.append_to_cache")
+@patch("requests.get")
+def test_parse_sheet_updates_cache(mock_requests_get, mock_append_cache):
+    """Test that parse_sheet adds to cache after successful parse."""
+    # Mock the CSV response
+    mock_response = MagicMock()
+    mock_response.text = (
+        "videoName,playerName,startTime,stopTime,notes\nGame1,Player1,00:00,00:10,note"
+    )
+    mock_requests_get.return_value = mock_response
+
+    response = client.post(
+        "/parse-sheet",
+        data={"sheet_url": "https://docs.google.com/spreadsheets/d/test123/edit"},
+    )
+
+    assert response.status_code == 200
+    # Verify append_to_cache was called with None for auto-title fetch
+    mock_append_cache.assert_called_once()
+    call_args = mock_append_cache.call_args
+    assert call_args[0][1] == "https://docs.google.com/spreadsheets/d/test123/edit"
+    assert call_args[1]["sheet_name"] is None  # Should auto-fetch

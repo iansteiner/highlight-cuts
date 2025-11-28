@@ -216,6 +216,19 @@ class TestGetVideoStructure:
             assert game["stream_url"] == "https://example.com/stream2"
             assert game["title"] == "Other Game"
 
+    def test_files_label_dir_and_stem_without_timestamp(self):
+        """Test /files labels directory and stem minus timestamp."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            player_dir = Path(tmpdir) / "Player_Team"
+            player_dir.mkdir()
+            video = player_dir / "Tourney_Game_20251128_042800.mp4"
+            video.touch()
+
+            with patch("highlight_cuts.web.OUTPUT_DIR", Path(tmpdir)):
+                response = client.get("/files")
+                assert response.status_code == 200
+                assert "Player Team | Tourney Game" in response.text
+
     def test_nested_subdirectories(self):
         """Test deeply nested structures beyond 3 levels."""
         with tempfile.TemporaryDirectory() as tmpdir:

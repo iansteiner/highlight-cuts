@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import tempfile
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
@@ -602,13 +603,14 @@ async def list_files():
         mtime = os.path.getmtime(f)
         time_str = time_ago(mtime)
 
-        # If in a subdirectory, use that as Player Name
-        if len(rel_path.parts) > 1:
-            player_name = rel_path.parts[0].replace("_", " ")
-            display_name = f.name
-        else:
-            player_name = "Unknown Player"
-            display_name = f.name
+        parent_parts = rel_path.parts[:-1]
+        dir_display = "/".join(parent_parts) if parent_parts else "Root"
+        dir_display = dir_display.replace("_", " ")
+
+        base_stem = f.stem
+        base_stem = re.sub(r"_\d{8}_\d{6}$", "", base_stem)
+        game_display = base_stem.replace("_", " ")
+        display_name = f.name
 
         html += f"""
         <li class="flex items-center justify-between p-2 hover:bg-gray-50 transition">
@@ -618,7 +620,7 @@ async def list_files():
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <div class="min-w-0">
-                    <p class="text-sm font-bold text-gray-900 truncate">{player_name}</p>
+                    <p class="text-sm font-bold text-gray-900 truncate">{dir_display} | {game_display}</p>
                     <p class="text-xs text-gray-500 truncate" title="{display_name}">{display_name}</p>
                     <p class="text-xs text-gray-400 italic">{time_str}</p>
                 </div>

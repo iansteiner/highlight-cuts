@@ -39,7 +39,7 @@
             </p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 gap-8">
 
             <!-- Main Form Column -->
             <div class="lg:col-span-2 space-y-8">
@@ -49,7 +49,15 @@
                     <!-- Card 1: Video Selection -->
                     <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
                         <div class="bg-blue-50 px-8 py-4 border-b border-blue-100 flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-blue-900">Video Selection</h3>
+                            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                                Video Selection
+                                <span class="relative group inline-flex items-center">
+                                    <button type="button" class="h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">?</button>
+                                    <div class="hidden group-hover:block absolute left-0 top-7 w-64 z-20 bg-white text-gray-700 text-xs rounded-lg shadow-lg border border-gray-200 p-3">
+                                        Choose a Team and Tournament, then click a game row to select it. Use the Stream icon to open the full game if available.
+                                    </div>
+                                </span>
+                            </h3>
                         </div>
 
                         <div class="space-y-3 p-8">
@@ -252,7 +260,15 @@
                     <!-- Card 2: Google Sheet, Selection, and Actions -->
                     <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
                         <div class="flex items-center justify-between bg-blue-50 px-8 py-4 border-b border-blue-100">
-                            <h3 class="text-lg font-semibold text-blue-900">Configure Highlights</h3>
+                            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                                Configure Highlights
+                                <span class="relative group inline-flex items-center">
+                                    <button type="button" class="h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">?</button>
+                                    <div class="hidden group-hover:block absolute left-0 top-7 w-64 z-20 bg-white text-gray-700 text-xs rounded-lg shadow-lg border border-gray-200 p-3">
+                                        Paste your Google Sheet URL, pick a game/player from the loaded table, then generate highlights.
+                                    </div>
+                                </span>
+                            </h3>
                         </div>
                         <div class="p-8 space-y-4">
 
@@ -416,67 +432,18 @@
                 <!-- Result Area -->
                 <div id="result-area" class="mt-6"></div>
 
-                <!-- Video Player -->
-                <div class="mt-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Player (Beta)</h3>
-                    <div id="video-player-container" class="bg-gray-900 rounded-xl border border-gray-800 min-h-[120px]"></div>
-                </div>
-            </div>
-
-            <!-- Sidebar Column -->
-            <div class="space-y-8">
-
-                <!-- Instructions Card -->
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div class="bg-blue-50 px-6 py-4 border-b border-blue-100">
-                        <h3 class="text-lg font-semibold text-blue-900 flex items-center">
-                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            How to use
-                        </h3>
-                    </div>
-                    <div class="p-6 text-sm text-gray-600 space-y-4">
-                        <div class="flex gap-3">
-                            <span
-                                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">1</span>
-                            <p>Select a video file from the <code>data/</code> directory.</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <span
-                                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">2</span>
-                            <p>Paste your Google Sheet URL (must be shared publicly).</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <span
-                                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">3</span>
-                            <p>Select the Game and Player.</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <span
-                                class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">4</span>
-                            <p>Click <strong>Generate Highlights</strong> and wait for processing.</p>
-                        </div>
-
-                        <div class="pt-4 border-t border-gray-100">
-                            <a href="https://docs.google.com/spreadsheets/d/1rydB9tbIIL-CsTYPSPwWzabxe_CRKXeCfH7HCcCFoxM/edit?usp=sharing"
-                                target="_blank"
-                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center text-xs">
-                                <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                                View Example Google Sheet
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Files Card -->
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <!-- Generated Files (moved inline) -->
+                <div class="mt-6 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-blue-100 flex justify-between items-center bg-blue-50">
-                        <h3 class="text-lg font-semibold text-blue-900">Generated Files</h3>
+                        <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                            Generated Files
+                            <span class="relative group inline-flex items-center">
+                                <button type="button" class="h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">?</button>
+                                <div class="hidden group-hover:block absolute left-0 top-7 w-64 z-20 bg-white text-gray-700 text-xs rounded-lg shadow-lg border border-gray-200 p-3">
+                                    Recent outputs. Click Play to open the inline player or use Download to save the MP4.
+                                </div>
+                            </span>
+                        </h3>
                         <span class="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full">Auto-refresh</span>
                     </div>
                     <div id="file-list" hx-get="/files" hx-trigger="load, every 5s"
@@ -485,7 +452,13 @@
                     </div>
                 </div>
 
+                <!-- Video Player -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Player (Beta)</h3>
+                    <div id="video-player-container" class="bg-gray-900 rounded-xl border border-gray-800 min-h-[120px]"></div>
+                </div>
             </div>
+
         </div>
     </div>
 

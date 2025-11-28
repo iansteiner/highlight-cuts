@@ -47,12 +47,13 @@
                 <form hx-post="/process" hx-target="#result-area" class="space-y-6">
 
                     <!-- Card 1: Video Selection -->
-                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8">
-                        <!-- Video Selection (Team -> Tournament -> Game) -->
-                        <div class="space-y-4">
-                            <label class="block text-sm font-semibold text-gray-700">Video Selection</label>
+                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                        <div class="bg-blue-50 px-8 py-4 border-b border-blue-100 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-blue-900">Video Selection</h3>
+                        </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-3 p-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <!-- Team Select -->
                                 <div>
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Team</label>
@@ -70,28 +71,15 @@
                                         <option value="" disabled selected>Select Tournament</option>
                                     </select>
                                 </div>
-
-                                <!-- Game Select -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-1">Game</label>
-                                    <select id="game-select-video" onchange="updateVideoPath()" disabled
-                                        class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border appearance-none disabled:bg-gray-100 disabled:text-gray-400">
-                                        <option value="" disabled selected>Select Game</option>
-                                    </select>
-                                </div>
                             </div>
 
                             <!-- Hidden input for the actual file path sent to server -->
                             <input type="hidden" name="video_filename" id="video-filename-input" required>
 
-                            <p class="text-xs text-gray-500 mt-1 flex items-center">
-                                <svg class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Files located in <code>/data/team/tournament/game.mp4</code>
-                            </p>
-                            <div id="game-table-container" class="mt-3"></div>
+                            <div class="mt-2">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2">Select Game</h4>
+                                <div id="game-table-container"></div>
+                            </div>
                         </div>
 
                         <script>
@@ -100,9 +88,9 @@
 
                             const teamSelect = document.getElementById('team-select');
                             const tournamentSelect = document.getElementById('tournament-select');
-                            const gameSelect = document.getElementById('game-select-video');
                             const videoInput = document.getElementById('video-filename-input');
                             const gameTableContainer = document.getElementById('game-table-container');
+                            let selectedGamePath = localStorage.getItem('selected-game') || '';
 
                             // Initialize Teams
                             const teamKeys = Object.keys(videoStructure);
@@ -127,10 +115,10 @@
                                 localStorage.removeItem('selected-game');
 
                                 tournamentSelect.innerHTML = '<option value="" disabled selected>Select Tournament</option>';
-                                gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
                                 tournamentSelect.disabled = true;
-                                gameSelect.disabled = true;
                                 videoInput.value = '';
+                                selectedGamePath = '';
+                                localStorage.removeItem('selected-game');
                                 gameTableContainer.innerHTML = '';
 
                                 if (team && videoStructure[team]) {
@@ -150,77 +138,69 @@
                                 localStorage.setItem('selected-tournament', tournament);
                                 localStorage.removeItem('selected-game');
 
-                                gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
-                                gameSelect.disabled = true;
                                 videoInput.value = '';
+                                selectedGamePath = '';
+                                localStorage.removeItem('selected-game');
                                 gameTableContainer.innerHTML = '';
 
                                 if (team && tournament && videoStructure[team][tournament]) {
                                     const games = videoStructure[team][tournament];
-                                    gameSelect.innerHTML = '<option value="" disabled selected>Select Game</option>';
-                                    games.forEach(game => {
-                                        const option = document.createElement('option');
-                                        option.value = game.path; // Store the relative path as value
-                                        option.textContent = game.title || game.name;
-                                        option.dataset.streamUrl = game.stream_url || '';
-                                        gameSelect.appendChild(option);
-                                    });
-                                    gameSelect.disabled = false;
-
-                                    // Render table with watch links
-                                    const rows = games.map(g => {
-                                        const streamCell = g.stream_url
-                                            ? `<a href="${g.stream_url}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Watch</a>`
-                                            : `<span class="text-gray-400 text-sm">No link</span>`;
-                                        return `
-                                            <tr class="border-b last:border-b-0">
-                                                <td class="py-2 px-3 text-sm text-gray-800">${g.title || g.name}</td>
-                                                <td class="py-2 px-3 text-xs text-gray-500">${g.suffix || ''}</td>
-                                                <td class="py-2 px-3">${streamCell}</td>
-                                                <td class="py-2 px-3 text-right">
-                                                    <button type="button" class="text-blue-600 hover:text-blue-800 text-sm font-medium" data-path="${g.path.replace(/\"/g, '&quot;')}" onclick="selectGameFromTable(this.dataset.path)">Use</button>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('');
-                                    gameTableContainer.innerHTML = `
-                                        <div class="mt-3 border rounded-lg overflow-hidden">
-                                            <table class="min-w-full divide-y divide-gray-200">
-                                                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-                                                    <tr>
-                                                        <th class="py-2 px-3 text-left">Game</th>
-                                                        <th class="py-2 px-3 text-left">Ext</th>
-                                                        <th class="py-2 px-3 text-left">Watch</th>
-                                                        <th class="py-2 px-3 text-right">Select</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="bg-white divide-y divide-gray-100">
-                                                    ${rows}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    `;
+                                    renderGameTable(games);
                                 }
                             }
 
-                            function updateVideoPath() {
-                                const team = teamSelect.value;
-                                const tournament = tournamentSelect.value;
-                                const gamePath = gameSelect.value; // This is the full relative path
-                                localStorage.setItem('selected-game', gamePath);
-
-                                videoInput.value = gamePath; // The input already expects the full path
+                            function renderGameTable(games) {
+                                const rows = games.map(g => {
+                                    const isSelected = g.path === selectedGamePath;
+                                    const rowClasses = [
+                                        "border-b",
+                                        "last:border-b-0",
+                                        "cursor-pointer",
+                                        "hover:bg-blue-50",
+                                        "transition",
+                                        isSelected ? "bg-blue-100 ring-2 ring-blue-200" : "",
+                                    ].join(" ");
+                                    const streamCell = g.stream_url
+                                        ? `<a href="${g.stream_url}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium" title="Watch">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l14 9-14 9V3z" />
+                                                </svg>
+                                            </a>`
+                                        : `<span class="text-gray-400 text-sm">—</span>`;
+                                    return `
+                                        <tr class="${rowClasses}" data-path="${g.path.replace(/\"/g, '&quot;')}" onclick="selectGameRow(this.dataset.path)">
+                                            <td class="py-2 px-3 w-12">${streamCell}</td>
+                                            <td class="py-2 px-3 text-sm text-gray-800">${g.title || g.name}</td>
+                                        </tr>
+                                    `;
+                                }).join('');
+                                gameTableContainer.innerHTML = `
+                                    <div class="mt-3 border rounded-lg overflow-hidden">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                                                <tr>
+                                                    <th class="py-2 px-3 text-left">Stream</th>
+                                                    <th class="py-2 px-3 text-left">Game</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-100">
+                                                ${rows}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `;
                             }
 
-                            window.selectGameFromTable = function (gamePath) {
-                                // Set dropdown and hidden input from table button
-                                const option = Array.from(gameSelect.options).find(opt => opt.value === gamePath);
-                                if (option) {
-                                    gameSelect.value = gamePath;
-                                    updateVideoPath();
-                                } else {
-                                    videoInput.value = gamePath;
-                                    localStorage.setItem('selected-game', gamePath);
+                            window.selectGameRow = function (gamePath) {
+                                selectedGamePath = gamePath;
+                                localStorage.setItem('selected-game', gamePath);
+                                videoInput.value = gamePath;
+
+                                // Re-render to update highlighting
+                                const team = teamSelect.value;
+                                const tournament = tournamentSelect.value;
+                                if (team && tournament && videoStructure[team][tournament]) {
+                                    renderGameTable(videoStructure[team][tournament]);
                                 }
                             };
 
@@ -241,16 +221,16 @@
                                             updateGames(); // Populate games based on saved tournament
 
                                             if (savedGame) {
-                                                // Check if the saved game path exists in the current game options
-                                                const gameExists = Array.from(gameSelect.options).some(option => option.value === savedGame);
+                                                const games = videoStructure[savedTeam][savedTournament] || [];
+                                                const gameExists = games.some(g => g.path === savedGame);
                                                 if (gameExists) {
-                                                    setTimeout(() => {
-                                                        gameSelect.value = savedGame;
-                                                        updateVideoPath(); // Set the hidden input
-                                                    }, 0);
+                                                    selectedGamePath = savedGame;
+                                                    videoInput.value = savedGame;
+                                                    localStorage.setItem('selected-game', savedGame);
+                                                    renderGameTable(games);
                                                 } else {
-                                                    // If saved game doesn't exist, clear it from storage
                                                     localStorage.removeItem('selected-game');
+                                                    selectedGamePath = '';
                                                 }
                                             }
                                         }, 0);
@@ -270,7 +250,10 @@
                     </div>
 
                     <!-- Card 2: Google Sheet, Selection, and Actions -->
-                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 space-y-8">
+                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 space-y-4">
+                        <div class="flex items-center justify-between bg-blue-50 px-6 py-4 border border-blue-100 rounded-xl -mx-2 -mt-2 mb-4">
+                            <h3 class="text-lg font-semibold text-blue-900">Configure Highlights</h3>
+                        </div>
 
                         <!-- Google Sheet URL -->
                         <div>
@@ -490,9 +473,9 @@
 
                 <!-- Recent Files Card -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <h3 class="text-lg font-semibold text-gray-800">Generated Files</h3>
-                        <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">Auto-refresh</span>
+                    <div class="px-6 py-4 border-b border-blue-100 flex justify-between items-center bg-blue-50">
+                        <h3 class="text-lg font-semibold text-blue-900">Generated Files</h3>
+                        <span class="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full">Auto-refresh</span>
                     </div>
                     <div id="file-list" hx-get="/files" hx-trigger="load, every 5s"
                         class="max-h-[500px] overflow-y-auto">

@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import pandas as pd
+import yaml
 
 from .core import process_csv, merge_intervals
 from .ffmpeg import extract_clip, concat_clips, generate_hls
@@ -124,12 +125,27 @@ def enforce_output_limits(
 def get_video_structure() -> Dict:
     """
     Scan data directory for video files in format: team/tournament/game.mp4
-    Returns a nested dict: {team: {tournament: [{name: game_name, path: relative_path}]}}
+    Returns a nested dict: {team: {tournament: [{name, path, title, stream_url, suffix}]}}
     """
     extensions = {".mp4", ".mov", ".mkv", ".avi", ".ts"}
     structure = {}
 
+    def load_metadata(dir_path: Path) -> dict:
+        for candidate in ("games.yaml", "games.yml"):
+            metadata_file = dir_path / candidate
+            if metadata_file.exists():
+                try:
+                    with open(metadata_file, "r") as f:
+                        data = yaml.safe_load(f) or {}
+                        return data.get("games", {})
+                except Exception as e:
+                    logger.warning(f"Failed to read metadata {metadata_file}: {e}")
+        return {}
+
     if DATA_DIR.exists():
+        # Preload metadata per tournament dir
+        metadata_cache = {}
+
         for f in DATA_DIR.rglob("*"):
             if f.is_file() and f.suffix.lower() in extensions:
                 rel_path = f.relative_to(DATA_DIR)
@@ -139,8 +155,16 @@ def get_video_structure() -> Dict:
                 if len(parts) >= 3:
                     team = parts[0]
                     tournament = parts[1]
-                    # Use the file stem as the game name for display
+                    tournament_dir = DATA_DIR / team / tournament
+                    if tournament_dir not in metadata_cache:
+                        metadata_cache[tournament_dir] = load_metadata(tournament_dir)
+                    meta = metadata_cache[tournament_dir].get(f.stem, {})
+
                     game_name = f.stem
+                    title = meta.get("title") or game_name
+                    stream_url = meta.get("stream_url")
+                    poster = meta.get("poster")
+                    notes = meta.get("notes")
 
                     if team not in structure:
                         structure[team] = {}
@@ -148,7 +172,15 @@ def get_video_structure() -> Dict:
                         structure[team][tournament] = []
 
                     structure[team][tournament].append(
-                        {"name": game_name, "path": str(rel_path)}
+                        {
+                            "name": game_name,
+                            "title": title,
+                            "path": str(rel_path),
+                            "suffix": f.suffix.lower(),
+                            "stream_url": stream_url,
+                            "poster": poster,
+                            "notes": notes,
+                        }
                     )
                 else:
                     # Handle files not in expected structure (e.g. root or 1 level deep)
@@ -163,7 +195,15 @@ def get_video_structure() -> Dict:
                         structure[team][tournament] = []
 
                     structure[team][tournament].append(
-                        {"name": game_name, "path": str(rel_path)}
+                        {
+                            "name": game_name,
+                            "title": game_name,
+                            "path": str(rel_path),
+                            "suffix": f.suffix.lower(),
+                            "stream_url": None,
+                            "poster": None,
+                            "notes": None,
+                        }
                     )
 
     # Sort keys

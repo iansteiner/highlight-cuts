@@ -180,6 +180,42 @@ class TestGetVideoStructure:
                 assert games[0]["name"] == "game_a"
                 assert games[1]["name"] == "game_z"
 
+    def test_metadata_yaml_enrichment(self):
+        """Test that games.yaml enriches stream_url and title."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            team_dir = Path(tmpdir) / "TeamA" / "Tournament1"
+            team_dir.mkdir(parents=True)
+            video_path = team_dir / "game1.mp4"
+            video_path.touch()
+            (team_dir / "games.yaml").write_text(
+                "games:\n  game1:\n    stream_url: https://example.com/stream\n    title: Cool Game\n"
+            )
+
+            with patch("highlight_cuts.web.DATA_DIR", Path(tmpdir)):
+                structure = get_video_structure()
+
+            game = structure["TeamA"]["Tournament1"][0]
+            assert game["stream_url"] == "https://example.com/stream"
+            assert game["title"] == "Cool Game"
+
+    def test_metadata_yml_enrichment(self):
+        """Test that games.yml also enriches stream_url and title."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            team_dir = Path(tmpdir) / "TeamA" / "Tournament1"
+            team_dir.mkdir(parents=True)
+            video_path = team_dir / "game1.mp4"
+            video_path.touch()
+            (team_dir / "games.yml").write_text(
+                "games:\n  game1:\n    stream_url: https://example.com/stream2\n    title: Other Game\n"
+            )
+
+            with patch("highlight_cuts.web.DATA_DIR", Path(tmpdir)):
+                structure = get_video_structure()
+
+            game = structure["TeamA"]["Tournament1"][0]
+            assert game["stream_url"] == "https://example.com/stream2"
+            assert game["title"] == "Other Game"
+
     def test_nested_subdirectories(self):
         """Test deeply nested structures beyond 3 levels."""
         with tempfile.TemporaryDirectory() as tmpdir:

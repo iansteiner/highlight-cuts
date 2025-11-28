@@ -75,6 +75,8 @@ def concat_clips(clip_paths: List[str], output_path: str) -> dict:
         list_file,
         "-c",
         "copy",
+        "-movflags",
+        "+faststart",
         output_path,
     ]
 
@@ -92,3 +94,56 @@ def concat_clips(clip_paths: List[str], output_path: str) -> dict:
     finally:
         if os.path.exists(list_file):
             os.remove(list_file)
+
+
+def generate_hls(
+    input_path: str, output_dir: str, segment_time: float = 6.0, reencode: bool = False
+) -> dict:
+    """
+    Generates HLS playlist and segments for the given input.
+
+    Args:
+        input_path: Path to the MP4 to segment.
+        output_dir: Directory to write playlist and segments.
+        segment_time: Target segment duration in seconds.
+        reencode: If True, re-encode video for cleaner GOP/keyframes.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    playlist_path = os.path.join(output_dir, "playlist.m3u8")
+    segment_pattern = os.path.join(output_dir, "segment_%03d.ts")
+
+    if reencode:
+        video_codec = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20"]
+    else:
+        video_codec = ["-codec", "copy"]
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        input_path,
+        *video_codec,
+        "-start_number",
+        "0",
+        "-hls_time",
+        f"{segment_time}",
+        "-hls_playlist_type",
+        "vod",
+        "-hls_flags",
+        "independent_segments",
+        "-hls_segment_filename",
+        segment_pattern,
+        playlist_path,
+    ]
+
+    logger.debug(f"Running HLS command: {' '.join(cmd)}")
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True)
+        return {
+            "command": " ".join(cmd),
+            "stdout": result.stdout.decode(),
+            "stderr": result.stderr.decode(),
+        }
+    except subprocess.CalledProcessError as e:
+        logger.error(f"FFmpeg HLS generation failed: {e.stderr.decode()}")
+        raise

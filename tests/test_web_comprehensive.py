@@ -13,6 +13,7 @@ from highlight_cuts.web import (
     format_seconds,
     process_video_task,
     NoCacheStaticFiles,
+    enforce_output_limits,
 )
 from highlight_cuts.core import Clip
 
@@ -701,11 +702,14 @@ class TestVideoPlayerEndpoint:
                 assert response.status_code == 200
                 assert "File not found" in response.text
 
-    def test_get_video_player_success(self):
-        """Test video player with existing file."""
+    def test_get_video_player_success_with_hls(self):
+        """Test video player with existing file and HLS playlist."""
         with tempfile.TemporaryDirectory() as tmpdir:
             video = Path(tmpdir) / "test.mp4"
             video.touch()
+            hls_dir = Path(tmpdir) / "test_hls"
+            hls_dir.mkdir()
+            (hls_dir / "playlist.m3u8").write_text("#EXTM3U")
 
             with patch("highlight_cuts.web.OUTPUT_DIR", Path(tmpdir)):
                 response = client.get("/player/test.mp4")
@@ -714,6 +718,8 @@ class TestVideoPlayerEndpoint:
                 assert "<video" in response.text
                 assert "test.mp4" in response.text
                 assert "/videos/test.mp4" in response.text
+                assert "playlist.m3u8" in response.text
+                assert "hls.js" in response.text
 
 
 class TestDownloadFileEndpoint:
@@ -766,6 +772,55 @@ class TestDownloadFileEndpoint:
                 response = client.get("/download/Player_Team/tournament_game.mp4")
 
                 assert response.status_code == 200
+
+
+class TestRetentionLimits:
+    def test_enforce_limits_removes_old_mp4_and_hls(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            player_dir = base / "PlayerA"
+            player_dir.mkdir()
+
+            old_file = player_dir / "game_20240101_000000.mp4"
+            new_file = player_dir / "game_20240102_000000.mp4"
+            old_file.touch()
+            new_file.touch()
+
+            old_hls = player_dir / "game_20240101_000000_hls"
+            old_hls.mkdir()
+            (old_hls / "playlist.m3u8").write_text("#EXTM3U")
+            (old_hls / "segment_000.ts").write_text("data")
+
+            # Make old file older
+            old_time = (datetime.now() - timedelta(days=1)).timestamp()
+            os.utime(old_file, (old_time, old_time))
+
+            enforce_output_limits(base, max_total=1, max_per_player_game=1)
+
+            assert new_file.exists()
+            assert not old_file.exists()
+            assert not old_hls.exists()
+
+    def test_enforce_limits_respects_total_limit_across_players(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            for idx in range(3):
+                pdir = base / f"Player{idx}"
+                pdir.mkdir()
+                fpath = pdir / f"game_20240101_00000{idx}.mp4"
+                fpath.touch()
+                os.utime(
+                    fpath,
+                    (
+                        datetime.now().timestamp() + idx,
+                        datetime.now().timestamp() + idx,
+                    ),
+                )
+
+            enforce_output_limits(base, max_total=2, max_per_player_game=2)
+
+            remaining = list(base.rglob("*.mp4"))
+            assert len(remaining) == 2
 
 
 class TestFormatSeconds:

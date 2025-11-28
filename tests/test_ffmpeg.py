@@ -1,5 +1,6 @@
-import pytest
 import subprocess
+import os
+import pytest
 from unittest.mock import patch, MagicMock
 from highlight_cuts.ffmpeg import extract_clip, concat_clips
 
@@ -58,6 +59,8 @@ def test_concat_clips_success(mock_run):
             "final.mp4.txt",
             "-c",
             "copy",
+            "-movflags",
+            "+faststart",
             "final.mp4",
         ]
         mock_run.assert_called_once_with(expected_cmd, check=True, capture_output=True)
@@ -75,3 +78,43 @@ def test_concat_clips_failure(mock_run):
     with patch("builtins.open"):
         with pytest.raises(subprocess.CalledProcessError):
             concat_clips(["c1.mp4"], "out.mp4")
+
+
+@patch("subprocess.run")
+def test_generate_hls_copy(mock_run):
+    from highlight_cuts.ffmpeg import generate_hls
+
+    mock_run.return_value = MagicMock(stdout=b"", stderr=b"")
+    generate_hls("input.mp4", "out_dir", segment_time=4.0, reencode=False)
+
+    expected_cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "input.mp4",
+        "-codec",
+        "copy",
+        "-start_number",
+        "0",
+        "-hls_time",
+        "4.0",
+        "-hls_playlist_type",
+        "vod",
+        "-hls_flags",
+        "independent_segments",
+        "-hls_segment_filename",
+        os.path.join("out_dir", "segment_%03d.ts"),
+        os.path.join("out_dir", "playlist.m3u8"),
+    ]
+    mock_run.assert_called_once_with(expected_cmd, check=True, capture_output=True)
+
+
+@patch("subprocess.run")
+def test_generate_hls_reencode(mock_run):
+    from highlight_cuts.ffmpeg import generate_hls
+
+    mock_run.return_value = MagicMock(stdout=b"", stderr=b"")
+    generate_hls("input.mp4", "out_dir", reencode=True)
+
+    cmd = mock_run.call_args[0][0]
+    assert "-c:v" in cmd and "libx264" in cmd and "-crf" in cmd

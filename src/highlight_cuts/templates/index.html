@@ -215,7 +215,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Google Sheet URL</label>
                             <div class="flex gap-2">
-                                <input type="text" name="sheet_url" list="cached-sheets"
+                                <input id="sheet-url" type="text" name="sheet_url" list="cached-sheets"
                                     class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border"
                                     placeholder="https://docs.google.com/spreadsheets/..." hx-post="/parse-sheet"
                                     hx-trigger="change" hx-target="#sheet-status" required>
@@ -231,6 +231,15 @@
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                                <button type="button" onclick="openSheetInNewTab()"
+                                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition flex items-center gap-2 shadow-sm font-medium"
+                                    title="Open sheet in new tab">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M14 3h7m0 0v7m0-7L10 14M5 5v14a2 2 0 002 2h10" />
                                     </svg>
                                 </button>
                             </div>
@@ -360,6 +369,12 @@
 
                 <!-- Result Area -->
                 <div id="result-area" class="mt-6"></div>
+
+                <!-- Video Player -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Player (Beta)</h3>
+                    <div id="video-player-container" class="bg-gray-900 rounded-xl border border-gray-800 min-h-[120px]"></div>
+                </div>
             </div>
 
             <!-- Sidebar Column -->
@@ -458,6 +473,15 @@
             sheetInput.addEventListener('input', saveToStorage);
             sheetInput.addEventListener('change', saveToStorage);
         });
+
+        function openSheetInNewTab() {
+            const input = document.getElementById('sheet-url');
+            if (!input || !input.value.trim()) {
+                alert('Enter a Google Sheet URL first.');
+                return;
+            }
+            window.open(input.value.trim(), '_blank');
+        }
     </script>
 </body>
 

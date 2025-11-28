@@ -337,6 +337,31 @@ async def process(
     """
     Initiates the processing.
     """
+    # Validate that game and player are not empty
+    if not game or not game.strip():
+        return """
+        <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+            <div class="flex items-center gap-2">
+                <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="text-red-700 font-medium">Error: No game selected. Please select a game and player from the table above.</span>
+            </div>
+        </div>
+        """
+
+    if not player or not player.strip():
+        return """
+        <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+            <div class="flex items-center gap-2">
+                <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="text-red-700 font-medium">Error: No player selected. Please select a game and player from the table above.</span>
+            </div>
+        </div>
+        """
+
     # Generate output filename
     # Format: player_team_tournament_game.mp4
     input_path = DATA_DIR / video_filename

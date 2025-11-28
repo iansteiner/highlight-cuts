@@ -210,3 +210,53 @@ def test_parse_sheet_updates_cache(mock_requests_get, mock_append_cache):
     call_args = mock_append_cache.call_args
     assert call_args[0][1] == "https://docs.google.com/spreadsheets/d/test123/edit"
     assert call_args[1]["sheet_name"] is None  # Should auto-fetch
+
+
+def test_process_without_game_selection():
+    """Test that process endpoint returns error when no game is selected."""
+    response = client.post(
+        "/process",
+        data={
+            "video_filename": "TeamA/Tourney1/Game1.mp4",
+            "sheet_url": "https://docs.google.com/spreadsheets/d/test123/edit",
+            "game": "",  # Empty game
+            "player": "Player1",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Error: No game selected" in response.text
+    assert "red-700" in response.text  # Error styling
+
+
+def test_process_without_player_selection():
+    """Test that process endpoint returns error when no player is selected."""
+    response = client.post(
+        "/process",
+        data={
+            "video_filename": "TeamA/Tourney1/Game1.mp4",
+            "sheet_url": "https://docs.google.com/spreadsheets/d/test123/edit",
+            "game": "Game1",
+            "player": "",  # Empty player
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Error: No player selected" in response.text
+    assert "red-700" in response.text  # Error styling
+
+
+def test_process_with_whitespace_only_game():
+    """Test that process endpoint rejects whitespace-only game."""
+    response = client.post(
+        "/process",
+        data={
+            "video_filename": "TeamA/Tourney1/Game1.mp4",
+            "sheet_url": "https://docs.google.com/spreadsheets/d/test123/edit",
+            "game": "   ",  # Whitespace only
+            "player": "Player1",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Error: No game selected" in response.text

@@ -205,4 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Application-specific runtime files
 *.mp4
+.sheet_cache.txt
+output/
+data/

@@ -286,10 +286,48 @@
                         <!-- Actions (Generate & Clips) -->
                         <div>
                             <!-- Submit Button -->
-                            <button type="submit"
+                            <button type="submit" id="generate-btn"
+                                onclick="return validateSelection()"
                                 class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mb-4">
                                 Generate Highlights
                             </button>
+                            <script>
+                                function validateSelection() {
+                                    const game = document.getElementById('game-input').value;
+                                    const player = document.getElementById('player-input').value;
+                                    const resultArea = document.getElementById('result-area');
+
+                                    if (!game || !game.trim()) {
+                                        resultArea.innerHTML = `
+                                            <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                                                <div class="flex items-center gap-2">
+                                                    <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    <span class="text-red-700 font-medium">Error: No game selected. Please select a game and player from the table above.</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                        return false;
+                                    }
+
+                                    if (!player || !player.trim()) {
+                                        resultArea.innerHTML = `
+                                            <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                                                <div class="flex items-center gap-2">
+                                                    <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    <span class="text-red-700 font-medium">Error: No player selected. Please select a game and player from the table above.</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                        return false;
+                                    }
+
+                                    return true;
+                                }
+                            </script>
 
                             <!-- Clips Table -->
                             <div id="clips-table" class="mt-4"></div>

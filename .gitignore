@@ -211,3 +211,6 @@ __marimo__/
 .sheet_cache.txt
 output/
 data/
+
+spike/bulk_test_output/
+test_video*mov

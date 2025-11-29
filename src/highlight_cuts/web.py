@@ -77,22 +77,25 @@ def enforce_output_limits(
     max_total: int = MAX_OUTPUT_TOTAL,
     max_per_player_game: int = MAX_OUTPUT_PER_PLAYER_GAME,
 ) -> None:
-    """Apply retention limits and keep HLS+MP4 in sync."""
+    """Apply retention limits and keep HLS+video files in sync."""
     files = []
-    for f in output_dir.rglob("*.mp4"):
-        if not f.is_file():
-            continue
-        rel = f.relative_to(output_dir)
-        player_dir = rel.parts[0] if len(rel.parts) > 1 else "Unknown"
-        base_pattern = f.stem.rsplit("_", 2)[0]
-        mtime = os.path.getmtime(f)
-        files.append(
-            {
-                "path": f,
-                "key": f"{player_dir}|{base_pattern}",
-                "mtime": mtime,
-            }
-        )
+    # Support multiple video formats (excluding .ts which are HLS segments)
+    video_extensions = {".mp4", ".mov", ".mkv", ".avi"}
+    for ext in video_extensions:
+        for f in output_dir.rglob(f"*{ext}"):
+            if not f.is_file():
+                continue
+            rel = f.relative_to(output_dir)
+            player_dir = rel.parts[0] if len(rel.parts) > 1 else "Unknown"
+            base_pattern = f.stem.rsplit("_", 2)[0]
+            mtime = os.path.getmtime(f)
+            files.append(
+                {
+                    "path": f,
+                    "key": f"{player_dir}|{base_pattern}",
+                    "mtime": mtime,
+                }
+            )
 
     # Per player/game limit
     to_delete = set()
@@ -357,7 +360,9 @@ def process_video_task(
         base_pattern = output_path.stem.rsplit("_", 2)[
             0
         ]  # Remove timestamp from pattern
-        pattern = str(output_dir / f"{base_pattern}_*.mp4")
+        # Use the actual file extension from the input video
+        file_extension = output_path.suffix
+        pattern = str(output_dir / f"{base_pattern}_*{file_extension}")
         old_files = glob.glob(pattern)
         for old_file in old_files:
             try:
@@ -572,10 +577,13 @@ async def list_files():
     """Returns a list of generated files in the output directory."""
     files = []
     if OUTPUT_DIR.exists():
-        # Find all video files recursively (filter for .mp4)
-        for f in OUTPUT_DIR.rglob("*.mp4"):
-            if f.is_file() and not f.name.startswith("."):
-                files.append(f)
+        # Find all video files recursively (common video extensions)
+        # NOTE: .ts files are excluded as they are HLS segments, not main videos
+        video_extensions = {".mp4", ".mov", ".mkv", ".avi"}
+        for ext in video_extensions:
+            for f in OUTPUT_DIR.rglob(f"*{ext}"):
+                if f.is_file() and not f.name.startswith("."):
+                    files.append(f)
         # Sort by modification time, newest first
         files = sorted(files, key=os.path.getmtime, reverse=True)
 

@@ -11,7 +11,8 @@ services:
       - /mnt/data/highlights/output:/app/output
       # Mount source for development
       - ./src:/app/src
-    command: uv run uvicorn highlight_cuts.web:app --host 0.0.0.0 --port 8000 --reload
+        #command: uv run uvicorn highlight_cuts.web:app --host 0.0.0.0 --port 8000 --reload
+    command: uv run uvicorn highlight_cuts.web:app --host 0.0.0.0 --port 8000
     environment:
       - HIGHLIGHT_CUTS_OUTPUT_DIR=/app/output
       - PYTHONPATH=/app/src
